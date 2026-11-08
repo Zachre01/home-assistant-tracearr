@@ -34,7 +34,7 @@ async def async_register_frontend(hass):
         if not resources.loaded:
             await resources.async_load()
         base_path = FRONTEND_URL
-        wanted = FRONTEND_URL + "?v=0.1.16"
+        wanted = FRONTEND_URL + "?v=0.1.17"
         existing = [item for item in resources.async_items() if item["url"].split("?")[0] == base_path]
         if not existing:
             await resources.async_create_item({"res_type": "module", "url": wanted})

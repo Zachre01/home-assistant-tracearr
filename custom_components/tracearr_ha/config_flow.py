@@ -89,7 +89,7 @@ class TracearrOptionsFlow(config_entries.OptionsFlow):
         accounts = await self._load_accounts()
         aliases = dict(self.config_entry.options.get(CONF_ALIASES, {}))
         for key in aliases:
-            accounts.setdefault(key, f"{key} (enregistré)")
+            accounts.setdefault(key, f"{key} (saved)")
         if not accounts:
             return self.async_abort(reason="no_users")
         fields = self._unique_fields(accounts)
@@ -152,7 +152,7 @@ class TracearrOptionsFlow(config_entries.OptionsFlow):
                         }
                     groups[group_id]["devices"][key] = label
                     continue
-            groups.setdefault("_other", {"server_id": None, "name": "Sans serveur identifié", "type": "other", "devices": {}})["devices"][key] = label
+            groups.setdefault("_other", {"server_id": None, "name": "No identified server", "type": "other", "devices": {}})["devices"][key] = label
         # Persisted server-wide rules must remain configurable even if the
         # media server is temporarily offline or no sessions are cached.
         for key in self.config_entry.options.get(CONF_NETWORK_LOCATIONS, {}):
@@ -181,7 +181,7 @@ class TracearrOptionsFlow(config_entries.OptionsFlow):
 
         The normal configuration-flow UI stacks fields vertically; it does not
         support a custom HTML grid. A radio selector makes the three choices
-        visible and prevents conflicting Local + Distant selections.
+        visible and prevents conflicting Local + Remote selections.
         """
         all_groups = await self._group_detected_devices()
         groups = sorted(
@@ -200,7 +200,7 @@ class TracearrOptionsFlow(config_entries.OptionsFlow):
             default_location = locations.get(default_key, "unknown") if default_key else "unknown"
             title = group["name"]
             if default_key:
-                bulk_label = f"{title} · Tous les appareils (actuel : { {'unknown': 'Non classé', 'local': 'Local', 'remote': 'Distant'}.get(default_location, 'Non classé') })"
+                bulk_label = f"{title} · All devices (current: { {'unknown': 'Unclassified', 'local': 'Local', 'remote': 'Remote'}.get(default_location, 'Unclassified') })"
                 fields[bulk_label] = ("bulk", group, None, "keep")
             for key, label in sorted(group["devices"].items(), key=lambda entry: entry[1].casefold()):
                 # Avoid showing the server name twice inside that server's list.
@@ -253,17 +253,17 @@ class TracearrOptionsFlow(config_entries.OptionsFlow):
             })
         radio = selector.SelectSelector(selector.SelectSelectorConfig(
             options=[
-                {"value": "unknown", "label": "Non classé"},
+                {"value": "unknown", "label": "Unclassified"},
                 {"value": "local", "label": "Local (LAN)"},
-                {"value": "remote", "label": "Distant (WAN)"},
+                {"value": "remote", "label": "Remote (WAN)"},
             ], mode="list",
         ))
         bulk = selector.SelectSelector(selector.SelectSelectorConfig(
             options=[
-                {"value": "keep", "label": "Ne pas modifier"},
-                {"value": "local", "label": "Tout classer Local"},
-                {"value": "remote", "label": "Tout classer Distant"},
-                {"value": "unknown", "label": "Tout remettre Non classé"},
+                {"value": "keep", "label": "Leave unchanged"},
+                {"value": "local", "label": "Set all to local"},
+                {"value": "remote", "label": "Set all to remote"},
+                {"value": "unknown", "label": "Reset all to unclassified"},
             ], mode="list",
         ))
         schema = vol.Schema({
@@ -344,17 +344,17 @@ class TracearrOptionsFlow(config_entries.OptionsFlow):
         coordinator = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
         if coordinator:
             for stream in coordinator.streams.values():
-                server = stream.get("server_name") or stream.get("server_type") or "Serveur"
-                server_type = str(stream.get("server_type") or "Média").upper()
+                server = stream.get("server_name") or stream.get("server_type") or "Server"
+                server_type = str(stream.get("server_type") or "Media").upper()
                 server_id = stream.get("server_id")
                 device = str(stream.get("device") or "").strip()
                 player = str(stream.get("player") or "").strip()
                 if device:
                     key = f"{server_id}:device:{device}" if server_id else f"device:{device}"
-                    devices[key] = f"{server_type} · {server} · {device} (appareil)"
+                    devices[key] = f"{server_type} · {server} · {device} (device)"
                 if player:
                     key = f"{server_id}:player:{player}" if server_id else f"player:{player}"
-                    devices[key] = f"{server_type} · {server} · {player} (lecteur)"
+                    devices[key] = f"{server_type} · {server} · {player} (player)"
         # History contains devices that are not currently playing. Limit API work
         # to 500 recent plays; keep all previously classified inactive devices.
         if getattr(self.config_entry, "data", {}).get(CONF_URL):
@@ -369,9 +369,9 @@ class TracearrOptionsFlow(config_entries.OptionsFlow):
                     result = await client.get("history", params)
                     for record in result.get("data", []):
                         server_id = record.get("server_id")
-                        server = record.get("server_name") or record.get("server_type") or "Serveur"
-                        server_type = str(record.get("server_type") or "Média").upper()
-                        for kind, suffix in (("device", "appareil"), ("player", "lecteur")):
+                        server = record.get("server_name") or record.get("server_type") or "Server"
+                        server_type = str(record.get("server_type") or "Media").upper()
+                        for kind, suffix in (("device", "device"), ("player", "player")):
                             value = str(record.get(kind) or "").strip()
                             if value:
                                 key = f"{server_id}:{kind}:{value}" if server_id else f"{kind}:{value}"
@@ -383,7 +383,7 @@ class TracearrOptionsFlow(config_entries.OptionsFlow):
                 # Active + saved devices still work when history is unavailable.
                 pass
         for key in self.config_entry.options.get(CONF_NETWORK_LOCATIONS, {}):
-            devices.setdefault(key, f"{key} (enregistré)")
+            devices.setdefault(key, f"{key} (saved)")
         return dict(sorted(devices.items(), key=lambda item:item[1].casefold()))
 
     async def async_step_network_device(self, user_input=None):
@@ -410,7 +410,7 @@ class TracearrOptionsFlow(config_entries.OptionsFlow):
                 return await self.async_step_network_location()
         return self.async_show_form(step_id="network_manual", data_schema=vol.Schema({
             vol.Required("match_type", default="device"): vol.In({
-                "device": "Nom de l’appareil (device)", "player": "Nom du lecteur (player)",
+                "device": "Device name", "player": "Player name",
             }),
             vol.Required("name"): str,
         }), errors=errors)
@@ -432,8 +432,8 @@ class TracearrOptionsFlow(config_entries.OptionsFlow):
             })
         return self.async_show_form(step_id="network_location", data_schema=vol.Schema({
             vol.Required("location", default=mapping.get(key, "unknown")): vol.In({
-                "unknown": "Non classé / supprimer la règle",
-                "local": "Local (LAN)", "remote": "Distant (WAN)",
+                "unknown": "Unclassified / remove rule",
+                "local": "Local (LAN)", "remote": "Remote (WAN)",
             }),
         }), description_placeholders={"device":key})
 

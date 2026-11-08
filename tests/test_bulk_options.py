@@ -102,10 +102,10 @@ def fixture_flow(options=None):
             'emby-id': {'server_type': 'emby', 'server_name': 'Emby'},
         },
         device_records={
-            'plex-id:device:Shield': 'PLEX · Plex Maison · Shield (appareil)',
-            'plex-id:player:Plex Web': 'PLEX · Plex Maison · Plex Web (lecteur)',
-            'jf-id:device:TV': 'JELLYFIN · Jellyfin · TV (appareil)',
-            'emby-id:device:Box': 'EMBY · Emby · Box (appareil)',
+            'plex-id:device:Shield': 'PLEX · Plex Maison · Shield (device)',
+            'plex-id:player:Plex Web': 'PLEX · Plex Maison · Plex Web (player)',
+            'jf-id:device:TV': 'JELLYFIN · Jellyfin · TV (device)',
+            'emby-id:device:Box': 'EMBY · Emby · Box (device)',
         },
     )
 
@@ -131,12 +131,12 @@ def test_device_radio_choices_and_prepopulated_values():
         'jf-id:device:TV': 'remote',
     }})
     form = asyncio.run(flow.async_step_devices_plex())
-    assert form['fields']['Plex Maison · Shield (appareil)'] == 'local'
-    assert form['fields']['Plex Maison · Plex Web (lecteur)'] == 'unknown'
-    assert any('Tous les appareils' in label for label in form['fields'])
+    assert form['fields']['Plex Maison · Shield (device)'] == 'local'
+    assert form['fields']['Plex Maison · Plex Web (player)'] == 'unknown'
+    assert any('All devices' in label for label in form['fields'])
     saved = asyncio.run(flow.async_step_devices_plex({
-        'Plex Maison · Shield (appareil)': 'remote',
-        'Plex Maison · Plex Web (lecteur)': 'local',
+        'Plex Maison · Shield (device)': 'remote',
+        'Plex Maison · Plex Web (player)': 'local',
     }))['saved']
     assert saved['network_locations'] == {
         'plex-id:device:Shield': 'remote',
@@ -144,7 +144,7 @@ def test_device_radio_choices_and_prepopulated_values():
         'jf-id:device:TV': 'remote',
     }
     flow.config_entry.options = saved
-    assert asyncio.run(flow.async_step_devices_plex())['fields']['Plex Maison · Shield (appareil)'] == 'remote'
+    assert asyncio.run(flow.async_step_devices_plex())['fields']['Plex Maison · Shield (device)'] == 'remote'
 
 
 def test_server_bulk_choice_adds_future_device_default_and_clears_old_overrides():
@@ -153,27 +153,27 @@ def test_server_bulk_choice_adds_future_device_default_and_clears_old_overrides(
         'jf-id:device:TV': 'local',
     }, 'aliases': {'plex-id:alice': 'Alice'}})
     initial = asyncio.run(flow.async_step_devices_plex())
-    bulk = next(label for label in initial['fields'] if 'Tous les appareils' in label)
+    bulk = next(label for label in initial['fields'] if 'All devices' in label)
     saved = asyncio.run(flow.async_step_devices_plex({bulk: 'local'}))['saved']
     assert saved['network_locations'] == {'server:plex-id': 'local', 'jf-id:device:TV': 'local'}
     assert saved['aliases'] == {'plex-id:alice': 'Alice'}
     flow.config_entry.options = saved
     result = asyncio.run(flow.async_step_devices_plex())
-    assert result['fields']['Plex Maison · Shield (appareil)'] == 'local'
-    assert result['fields']['Plex Maison · Plex Web (lecteur)'] == 'local'
-    assert any('actuel : Local' in label for label in result['fields'])
+    assert result['fields']['Plex Maison · Shield (device)'] == 'local'
+    assert result['fields']['Plex Maison · Plex Web (player)'] == 'local'
+    assert any('current: Local' in label for label in result['fields'])
 
 
 def test_individual_unknown_can_override_remote_default_and_restore_default():
     flow = fixture_flow({'network_locations': {'server:plex-id': 'remote'}})
     saved = asyncio.run(flow.async_step_devices_plex({
-        'Plex Maison · Shield (appareil)': 'unknown',
+        'Plex Maison · Shield (device)': 'unknown',
     }))['saved']
     assert saved['network_locations'] == {'server:plex-id':'remote', 'plex-id:device:Shield':'unknown'}
     flow.config_entry.options = saved
-    assert asyncio.run(flow.async_step_devices_plex())['fields']['Plex Maison · Shield (appareil)'] == 'unknown'
+    assert asyncio.run(flow.async_step_devices_plex())['fields']['Plex Maison · Shield (device)'] == 'unknown'
     reverted = asyncio.run(flow.async_step_devices_plex({
-        'Plex Maison · Shield (appareil)': 'remote',
+        'Plex Maison · Shield (device)': 'remote',
     }))['saved']
     assert reverted['network_locations'] == {'server:plex-id':'remote'}
 
@@ -181,7 +181,7 @@ def test_individual_unknown_can_override_remote_default_and_restore_default():
 def test_bulk_unclassified_clears_server_default_without_touching_other_server():
     flow = fixture_flow({'network_locations': {'server:plex-id':'remote', 'plex-id:device:Shield':'local', 'server:jf-id':'local'}})
     form = asyncio.run(flow.async_step_devices_plex())
-    bulk = next(label for label in form['fields'] if 'Tous les appareils' in label)
+    bulk = next(label for label in form['fields'] if 'All devices' in label)
     saved = asyncio.run(flow.async_step_devices_plex({bulk:'unknown'}))['saved']
     assert saved['network_locations'] == {'server:jf-id':'local'}
 
@@ -197,8 +197,8 @@ def test_aliases_table_edits_multiple_and_preserves_avatars():
 
 
 def test_other_category_keeps_legacy_global_devices():
-    flow=Flow({'network_locations': {'device:Old TV': 'local'}},device_records={'device:Old TV':'device:Old TV (enregistré)'})
+    flow=Flow({'network_locations': {'device:Old TV': 'local'}},device_records={'device:Old TV':'device:Old TV (saved)'})
     result=asyncio.run(flow.async_step_devices_table())
     assert result['options']==['devices_other']
     form=asyncio.run(flow.async_step_devices_other())
-    assert form['fields']['Sans serveur identifié · device:Old TV (enregistré)']=='local'
+    assert form['fields']['No identified server · device:Old TV (saved)']=='local'

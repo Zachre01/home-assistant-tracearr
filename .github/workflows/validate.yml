@@ -30,7 +30,7 @@ jobs:
   validate-hacs:
     runs-on: ubuntu-latest
     steps:
-      - name: Valider le dépôt HACS
+      - name: Validate the HACS repository
         uses: hacs/action@main
         with:
           category: integration
@@ -39,5 +39,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Valider avec hassfest
+      - name: Validate with hassfest
         uses: home-assistant/actions/hassfest@master

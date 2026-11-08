@@ -194,18 +194,18 @@ test('video and audio icons indicate independent direct, transcode or unknown st
   card._config = {...card._config,show_poster:false,show_avatar:false};
   const base = {id:'abc', username:'x', server_type:'plex',media_title:'Film',media_type:'movie',state:'playing',progress_ms:0,duration_ms:10000};
   let html=card._streamCard(null,{...base,video_decision:'directplay',audio_decision:'transcode',is_transcode:true});
-  assert.match(html, /stream-indicator direct.*Vidéo : Lecture directe/s);
-  assert.match(html, /stream-indicator transcode.*Audio : Transcodage/s);
-  assert.doesNotMatch(html, /chip.*Transcode vidéo/);
+  assert.match(html, /stream-indicator direct.*Video: Direct play/s);
+  assert.match(html, /stream-indicator transcode.*Audio: Transcode/s);
+  assert.doesNotMatch(html, /chip.*Video transcode/);
   html=card._streamCard(null,{...base,video_decision:null,audio_decision:'copy'});
-  assert.match(html, /stream-indicator unknown.*Vidéo : Inconnu/s);
-  assert.match(html, /stream-indicator direct.*Audio : Lecture directe/s);
+  assert.match(html, /stream-indicator unknown.*Video: Unknown/s);
+  assert.match(html, /stream-indicator direct.*Audio: Direct play/s);
   card._config.show_transcode_icons=false;
   html=card._streamCard(null,{...base,video_decision:'transcode',audio_decision:'transcode'});
   assert.doesNotMatch(html,/media-flags/);
 });
 
-test('paused stream overlays poster and replaces remaining time with orange En pause', () => {
+test('paused stream overlays poster and replaces remaining time with orange Paused', () => {
   const {card} = setup();
   card._config = {...card._config,show_poster:true,show_avatar:false,show_progress:true,show_remaining:true};
   // Set up fake image proxy avoiding external calls.
@@ -214,12 +214,12 @@ test('paused stream overlays poster and replaces remaining time with orange En p
   let html=card._streamCard(null,base);
   assert.match(html, /poster-paused/);
   assert.match(html, /pause-symbol/);
-  assert.match(html, /class="time-paused">En pause/);
+  assert.match(html, /class="time-paused">Paused/);
   assert.doesNotMatch(html,/class="time-remaining"/);
   assert.doesNotMatch(html,/class="stream paused"/);
   card._config.show_remaining=false;
   html=card._streamCard(null,base);
-  assert.match(html,/class="time-paused">En pause/);
+  assert.match(html,/class="time-paused">Paused/);
   card._config.show_remaining=true;
   html=card._streamCard(null,{...base,state:'playing'});
   assert.doesNotMatch(html,/poster-paused/);
@@ -269,10 +269,10 @@ test('header metrics are configurable independently and count only visible sessi
     show_header:true, header_show_streams:true,header_show_bandwidth:true,header_show_server_counts:true,
     header_show_video:true,header_show_both:true,header_show_audio:false,header_show_paused:false};
   const html=card._header(streams);
-  for(const fragment of ['Activité multimédia','3 flux','Débit : 12.0 Mb/s','Vidéo : 1','Vidéo + audio : 1','Plex : 2','Jellyfin : 1']) {
+  for(const fragment of ['Activité multimédia','3 streams','Bitrate : 12.0 Mb/s','Video : 1','Video + audio : 1','Plex : 2','Jellyfin : 1']) {
     assert.ok(html.includes(fragment),fragment);
   }
-  assert.doesNotMatch(html, /Audio : 0|Pause : 1/);
+  assert.doesNotMatch(html, /Audio : 0|Paused : 1/);
   card._config.show_header=false;
   assert.equal(card._header(streams),'');
   card._config.show_header=true;card._config.show_title=false;
@@ -321,12 +321,13 @@ test('editor keeps layout in general display and renders header counters as simp
   const editor=new Editor();
   editor.setConfig({type:'custom:tracearr-streams-card'});
   const html=editor.shadowRoot.innerHTML;
-  for (const title of ['Affichage général','Choix des lectures et filtres','Navigation et carrousel','En-tête et badges','Titres, saisons et années',
-    "Bandeau d'informations du flux",'Débit local / distant','Réglages avancés par carte'])
-    assert.ok(html.includes(title.replaceAll("'",'&#39;')),title);
+  for (const title of ['General display','Playback and filters','Carousel navigation','Header and badges','Titles, seasons, and years',
+    'Stream details','Local / remote bitrate','Per-card settings'])
+    assert.ok(html.includes(title),title);
   assert.doesNotMatch(html,/data-section="layout"/);
   assert.match(html,/data-subdetail="metric-streams"/);
   assert.match(html,/data-section="global"[\s\S]*data-field="mode"[\s\S]*data-section="source"/);
+  assert.match(html,/Adaptive grid[\s\S]*data-field="columns"/);
   for (const field of ['streams','bandwidth','direct','paused','video','audio','both','transcodes_total','server_counts']) {
     assert.match(html,new RegExp(`<input type="checkbox" data-field="header_show_${field}"`));
   }
@@ -335,23 +336,38 @@ test('editor keeps layout in general display and renders header counters as simp
   assert.match(html,/data-field="header_show_server_counts"/);
   assert.match(html,/data-field="accent_color_mode"/);
   assert.match(html,/data-field="show_quality"/);
-  for (const obsolete of ['Largeur Sections','Hauteur initiale Sections','Hauteur CSS hors Sections','Grille adaptative'])
+  for (const obsolete of ['Sections width','Initial Sections height','CSS height outside Sections'])
     assert.ok(!html.includes(obsolete),obsolete);
 });
 
-test('native Sections layout owns size regardless of legacy pixel/row settings', () => {
+test('native Sections layout owns size and the adaptive grid keeps its column count', () => {
   const {card}=setup();
   const opts=card.getGridOptions();
   assert.equal(opts.rows,4);
   assert.equal(opts.min_rows,2);
   assert.equal(opts.max_rows,30);
-  card.setConfig({mode:'grid',height:330,grid_rows:7,grid_columns:6,font_size:18});
-  assert.equal(card._config.mode,'list');
-  for(const removed of ['height','grid_rows','grid_columns','columns'])
+  card.setConfig({mode:'grid',columns:'2',height:330,grid_rows:7,grid_columns:6,font_size:18});
+  assert.equal(card._config.mode,'grid');
+  assert.equal(card._config.columns,'2');
+  for(const removed of ['height','grid_rows','grid_columns'])
     assert.ok(!(removed in card._config),removed);
   card.render();
-  assert.doesNotMatch(card.shadowRoot.innerHTML,/height:330px/);
-  assert.match(card.shadowRoot.innerHTML,/--tr-font-size:18px/);
+  const html=card.shadowRoot.innerHTML;
+  assert.doesNotMatch(html,/height:330px/);
+  assert.match(html,/--tr-font-size:18px/);
+  assert.match(html,/class="streams grid"/);
+  assert.match(html,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(html,/--min-column:290px/);
+  card.setConfig({mode:'grid',columns:'auto',compact:true});
+  card.render();
+  const auto=card.shadowRoot.innerHTML;
+  assert.match(auto,/grid-template-columns:repeat\(auto-fit,minmax\(min\(100%,var\(--min-column,290px\)\),1fr\)\)/);
+  assert.match(auto,/--min-column:210px/);
+  assert.match(auto,/@container \(max-width:520px\)[\s\S]*\.streams\.grid \{ grid-template-columns:1fr!important;/);
+  card.setConfig({mode:'list'});
+  assert.equal(card._config.mode,'list');
+  card.render();
+  assert.match(card.shadowRoot.innerHTML,/class="streams list"/);
   assert.equal(card.getGridOptions().rows,4);
 });
 
@@ -484,13 +500,13 @@ test('custom title, episode and year order works with short and long season form
   card._config.series_episode_style='long';
   card._config.series_field_order='year,episode,series,season';
   assert.deepEqual(Array.from(card._mediaFields(s), x=>x.text),
-    ['2022','Rencontre','Les Lacs','Saison 1','Épisode 7']);
+    ['2022','Rencontre','Les Lacs','Season 1','Episode 7']);
   let html=card._mediaMarkup(s);
   assert.match(html,/class="title" title="2022"/);
-  assert.match(html,/Rencontre · Les Lacs · Saison 1 · Épisode 7/);
+  assert.match(html,/Rencontre · Les Lacs · Season 1 · Episode 7/);
   card._config.series_field_order='season,year,season,invalid,episode,series';
   assert.deepEqual(Array.from(card._mediaFields(s), x=>x.text),
-    ['Saison 1','2022','Rencontre','Les Lacs','Épisode 7']);
+    ['Season 1','2022','Rencontre','Les Lacs','Episode 7']);
   card._config.series_episode_style='short';
   card._config.series_field_order='season,episode_number,year,episode,series';
   assert.match(card._mediaMarkup(s),/S01E07/);
@@ -530,7 +546,7 @@ test('media editor exposes individual toggles and reorder buttons', () => {
   const editor=new Editor();
   editor.setConfig({type:'custom:tracearr-streams-card'});
   const html=editor.shadowRoot.innerHTML;
-  assert.match(html,/Titres, saisons et années/);
+  assert.match(html,/Titles, seasons, and years/);
   for(const field of ['movie_show_title','movie_show_year','series_show_title',
     'series_show_episode_title','series_show_season','series_show_episode_number','series_show_year',
     'series_episode_style','header_badge_color_mode','header_badge_custom_color']) {
@@ -589,14 +605,14 @@ test('season and episode number have separate switches, formats and independentl
   assert.match(card._mediaMarkup(episode), /S03/);
   assert.doesNotMatch(card._mediaMarkup(episode), /E09/);
   card._config.series_episode_style='long';
-  assert.match(card._mediaMarkup(episode), /Saison 3/);
-  assert.doesNotMatch(card._mediaMarkup(episode), /Épisode 9/);
+  assert.match(card._mediaMarkup(episode), /Season 3/);
+  assert.doesNotMatch(card._mediaMarkup(episode), /Episode 9/);
   card._config.series_show_season=false;
   card._config.series_show_episode_number=true;
-  assert.match(card._mediaMarkup(episode), /Épisode 9/);
-  assert.doesNotMatch(card._mediaMarkup(episode), /Saison 3/);
+  assert.match(card._mediaMarkup(episode), /Episode 9/);
+  assert.doesNotMatch(card._mediaMarkup(episode), /Season 3/);
   card._config.series_field_order='episode_number,year,series,episode,season';
-  assert.match(card._mediaMarkup(episode), /class="title" title="Épisode 9"/);
+  assert.match(card._mediaMarkup(episode), /class="title" title="Episode 9"/);
 });
 
 test('legacy season and episode toggle migrates to two independent controls and keeps order', () => {
@@ -621,18 +637,18 @@ test('bandwidth shows all, LAN or WAN only when manually classifiable', () => {
   assert.equal(card._networkScope(alice),'remote');
   assert.equal(card._networkScope(bob),'local');
   assert.equal(card._networkScope(unknown),'unknown');
-  assert.match(card._header([alice,bob,unknown]),/Débit : 9.0 Mb\/s/);
+  assert.match(card._header([alice,bob,unknown]),/Bitrate : 9.0 Mb\/s/);
   card._config.bitrate_scope='remote';
-  assert.match(card._header([alice,bob,unknown]),/Débit distant : 6.0 Mb\/s/);
+  assert.match(card._header([alice,bob,unknown]),/Remote bitrate : 6.0 Mb\/s/);
   assert.match(card._streamCard(null,alice),/6\.0 Mb\/s/);
   assert.doesNotMatch(card._streamCard(null,bob),/2\.0 Mb\/s/);
   assert.doesNotMatch(card._streamCard(null,unknown),/1\.0 Mb\/s/);
   card._config.bitrate_scope='local';
-  assert.match(card._header([alice,bob,unknown]),/Débit local : 2.0 Mb\/s/);
+  assert.match(card._header([alice,bob,unknown]),/Local bitrate : 2.0 Mb\/s/);
   assert.doesNotMatch(card._streamCard(null,alice),/6\.0 Mb\/s/);
   assert.match(card._streamCard(null,bob),/2\.0 Mb\/s/);
   card._config.network_locations='';
-  assert.match(card._header([alice,bob,unknown]),/Débit local : 0.0 Mb\/s/);
+  assert.match(card._header([alice,bob,unknown]),/Local bitrate : 0.0 Mb\/s/);
 });
 
 test('arbitrary Home Assistant sensor, counter and units are safely shown as header badges', () => {
@@ -650,7 +666,7 @@ test('arbitrary Home Assistant sensor, counter and units are safely shown as hea
   const html=card._header([]);
   assert.match(html,/Demandes : 4/);
   assert.match(html,/PAC &lt;salon&gt; : 870 W/);
-  assert.match(html,/Autre : Indisponible/);
+  assert.match(html,/Autre : Unavailable/);
   assert.doesNotMatch(html,/Intrusion/);
 });
 
@@ -677,7 +693,7 @@ test('empty state offers a custom message, header only or completely hidden card
   card.render();
   assert.match(card.shadowRoot.innerHTML,/Tout le monde dort !/);
   card._config.empty_mode='header_only';card._renderFingerprint=null;card.render();
-  assert.match(card.shadowRoot.innerHTML,/Lectures en cours/);
+  assert.match(card.shadowRoot.innerHTML,/Now playing/);
   assert.doesNotMatch(card.shadowRoot.innerHTML,/Tout le monde dort !/);
   card._config.empty_mode='hide';card._renderFingerprint=null;card.render();
   assert.equal(card.style.display,'none');
@@ -698,8 +714,8 @@ test('new editor exposes entity picker, independent season options, network scop
   assert.match(html,/data-badge-label="0"/);
   assert.match(html,/data-badge-remove="0"/);
   assert.match(html,/data-badge-add/);
-  assert.match(html,/En l&#39;absence de lecture/);
-  assert.match(html,/Débit local \/ distant/);
+  assert.match(html,/When nothing is playing/);
+  assert.match(html,/Local \/ remote bitrate/);
 });
 
 // 0.1.8: paired clocks, projected end-time, clearer video/audio pictograms and
@@ -720,7 +736,7 @@ test('elapsed and remaining switch simultaneously and add up to displayed durati
   card._updateProgress();
   assert.equal(elapsed.textContent,'1:01');
   assert.equal(remaining.textContent,'-1:00');
-  assert.match(end.textContent,/Fin à \d{2}:\d{2}/);
+  assert.match(end.textContent,/Ends at \d{1,2}:\d{2} [AP]M/);
   const firstPair=[elapsed.textContent,remaining.textContent];
   time=400;card._updateProgress();
   assert.deepEqual([elapsed.textContent,remaining.textContent],firstPair);
@@ -739,14 +755,14 @@ test('finish time independently appears in playing streams but not paused ones',
   const stream={id:'x',username:'Test',server_type:'plex',media_title:'Film',media_type:'movie',
     state:'playing',progress_ms:120000,duration_ms:3600000,started_at:'2026-11-03T18:00:00'};
   let html=card._streamCard(null,stream);
-  assert.match(html,/Fin à \d{2}:\d{2}/);
+  assert.match(html,/Ends at \d{1,2}:\d{2} [AP]M/);
   assert.doesNotMatch(html,/class="progress"/);
   html=card._streamCard(null,{...stream,state:'paused'});
-  assert.doesNotMatch(html,/Fin estimée/);
-  assert.match(html,/En pause/);
+  assert.doesNotMatch(html,/Estimated end/);
+  assert.match(html,/Paused/);
   card._config.show_end_time=false;
   html=card._streamCard(null,stream);
-  assert.doesNotMatch(html,/Fin estimée/);
+  assert.doesNotMatch(html,/Estimated end/);
 });
 
 test('new icons are a clapperboard with play triangle and speaker with sound waves', () => {
@@ -775,7 +791,7 @@ test('header badges: zero color, hide zero, and blink only for positive values',
   html=card._header([{id:'a',state:'playing',server_id:'plex',server_type:'plex',server_name:'Plex',video_decision:'transcode',audio_decision:'directplay'}]);
   assert.match(html,/class="metric blink-positive"/);
   assert.match(html,/--badge-blink:1\.5s/);
-  assert.match(html,/Vidéo : 1/);
+  assert.match(html,/Video : 1/);
 });
 
 test('entity badge permits icon-only, individual duration, and selective visibility', () => {
@@ -850,9 +866,9 @@ test('header order applies to metrics, HA badges, and maintains server counts as
   const pos=fragment=>html.indexOf(fragment);
   assert.ok(pos('Demandes : 5')<pos('Plex : 1'));
   assert.ok(pos('Plex : 1')<pos('Jellyfin : 1'));
-  assert.ok(pos('Jellyfin : 1')<pos('Vidéo : 1'));
-  assert.ok(pos('Vidéo : 1')<pos('2 flux'));
-  assert.ok(pos('2 flux')<pos('Débit : 3.5 Mb/s'));
+  assert.ok(pos('Jellyfin : 1')<pos('Video : 1'));
+  assert.ok(pos('Video : 1')<pos('2 streams'));
+  assert.ok(pos('2 streams')<pos('Bitrate : 3.5 Mb/s'));
 });
 
 test('footer order controls visible server, device and quality fields',()=>{
@@ -875,8 +891,8 @@ test('editor exposes unified move buttons for header metrics, HA badges and foot
   const html=editor.shadowRoot.innerHTML;
   assert.match(html,/data-order="header_badge_order"/);
   assert.match(html,/data-order="footer_field_order"/);
-  assert.match(html,/Entité : Demandes/);
-  assert.match(html,/Débit du flux/);
+  assert.match(html,/Entity: Demandes/);
+  assert.match(html,/Stream bitrate/);
 });
 
 
@@ -888,16 +904,16 @@ test('elapsed and remaining are adjacent at left, estimated ending is separately
     media_title:'Test', media_type:'movie',state:'playing',progress_ms:60000,
     duration_ms:180000});
   assert.match(html, /class="time-left">[\s\S]*class="time-current"[\s\S]*class="time-separator">\/[\s\S]*class="time-remaining"/);
-  assert.match(html, /<\/span><span class="time-end" data-id="clock1">Fin à \d{2}:\d{2}<\/span><\/div>/);
-  assert.doesNotMatch(html, /time-right|Fin estimée/);
+  assert.match(html, /<\/span><span class="time-end" data-id="clock1">Ends at \d{1,2}:\d{2} [AP]M<\/span><\/div>/);
+  assert.doesNotMatch(html, /time-right|Estimated end/);
 });
 
-test('paused stream displays En pause beside elapsed and no predicted end', () => {
+test('paused stream displays Paused beside elapsed and no predicted end', () => {
   const {card} = setup();
   card._config = {...card._config, show_poster:false, show_avatar:false,show_end_time:true};
   const html = card._streamCard(null, {id:'pause1',username:'Alice',server_type:'plex',
     media_title:'Film',media_type:'movie',state:'paused',progress_ms:60000,duration_ms:180000});
-  assert.match(html, /class="time-left">[\s\S]*class="time-current"[\s\S]*class="time-paused">En pause/);
+  assert.match(html, /class="time-left">[\s\S]*class="time-current"[\s\S]*class="time-paused">Paused/);
   assert.doesNotMatch(html, /class="time-end"/);
 });
 
@@ -1002,7 +1018,7 @@ test('header badges move left when title is hidden, and stay right when shown', 
   assert.match(card._header([]),/class="head-group align-left"><span class="metric/);
   assert.match(card.shadowRoot.innerHTML,/\.head-metrics \{ display:flex;/);
   card._config.show_title=true;
-  assert.match(card._header([]),/<header class="head"><h3>Lectures en cours<\/h3><div class="head-metrics">/);
+  assert.match(card._header([]),/<header class="head"><h3>Now playing<\/h3><div class="head-metrics">/);
   assert.match(card._header([]),/class="head-group align-right"><span class="metric/);
 });
 
@@ -1130,7 +1146,7 @@ test('visual editor offers blur intensity, darkening and rounded edge styling fo
   for (const type of ['custom:tracearr-streams-card','custom:tracearr-stream-card']) {
     editor.setConfig({type,stream_surface:'blur',stream_blur:32,stream_overlay:62,stream_accent_width:5});
     const html=editor.shadowRoot.innerHTML;
-    assert.match(html,/value="blur">Affiche floutée \(cinéma\)/);
+    assert.match(html,/value="blur">Blurred poster \(cinema\)/);
     assert.match(html,/data-field="stream_blur" value="32"/);
     assert.match(html,/data-field="stream_overlay" value="62"/);
     assert.match(html,/data-field="stream_accent_style"/);
@@ -1206,18 +1222,18 @@ test('statistic and Home Assistant badges can independently choose left, center 
   const header=card._header(streams);
   const getGroup=align => header.match(new RegExp('class="head-group align-'+align+'">([\\s\\S]*?)<\\/div>'))?.[1]||'';
   assert.ok(getGroup('left').includes('Demandes : 2'));
-  assert.ok(getGroup('left').includes('1 flux'));
-  assert.ok(getGroup('left').indexOf('Demandes : 2') < getGroup('left').indexOf('1 flux'));
-  assert.ok(getGroup('center').includes('Vidéo : 1'));
+  assert.ok(getGroup('left').includes('1 stream'));
+  assert.ok(getGroup('left').indexOf('Demandes : 2') < getGroup('left').indexOf('1 stream'));
+  assert.ok(getGroup('center').includes('Video : 1'));
   assert.ok(getGroup('right').includes('Disque : 38 %'));
-  assert.ok(getGroup('right').includes('Débit : 4.5 Mb/s'));
-  assert.ok(getGroup('right').indexOf('Disque : 38 %') < getGroup('right').indexOf('Débit : 4.5 Mb/s'));
-  assert.doesNotMatch(getGroup('left'),/Débit :/);
+  assert.ok(getGroup('right').includes('Bitrate : 4.5 Mb/s'));
+  assert.ok(getGroup('right').indexOf('Disque : 38 %') < getGroup('right').indexOf('Bitrate : 4.5 Mb/s'));
+  assert.doesNotMatch(getGroup('left'),/Bitrate :/);
   card._config.show_title=true;
-  assert.ok(getGroup('left').includes('1 flux')); // explicit alignment unaffected by title
+  assert.ok(getGroup('left').includes('1 stream')); // explicit alignment unaffected by title
   const shown=card._header(streams);
-  assert.match(shown,/<h3>Lectures en cours<\/h3>/);
-  assert.match(shown,/class="head-group align-left">[\s\S]*?1 flux/);
+  assert.match(shown,/<h3>Now playing<\/h3>/);
+  assert.match(shown,/class="head-group align-left">[\s\S]*?1 stream/);
 });
 
 test('per-statistic style works like entity badges, including icon/name, zero color and blink', () => {
@@ -1242,7 +1258,7 @@ test('per-statistic style works like entity badges, including icon/name, zero co
   assert.match(html,/icon="mdi:movie-open"/);
   assert.match(html,/--badge-blink:1.5s/);
   assert.match(html,/class="metric blink-positive"/);
-  assert.doesNotMatch(html,/Vidéo : 1/);
+  assert.doesNotMatch(html,/Video : 1/);
   assert.match(html,/Transcodes : 1|>1<\/span>/);
   assert.match(html,/Son : 0/);
 });
@@ -1307,7 +1323,7 @@ test('editor renders the same advanced style and alignment controls for both car
   assert.match(html,/class="head-group align-right">/);
   assert.doesNotMatch(html,/class="head-group align-center"/);
   assert.doesNotMatch(html,/class="head-metrics with-center"/);
-  const before=html.indexOf('1 flux'),after=html.indexOf('Seerr : 0');
+  const before=html.indexOf('1 stream'),after=html.indexOf('Seerr : 0');
   assert.ok(before>=0 && after>before);
   card.render();
   const css=card.shadowRoot.innerHTML;
@@ -1348,9 +1364,9 @@ test('center badge uses only its intrinsic width while retaining perfect horizon
   card._hass={states:{'counter.seerr':{state:'0',attributes:{}}}};
   const header=card._header([{id:'s',state:'playing',bitrate:2500}]);
   assert.match(header,/<div class="head-metrics with-center">/);
-  assert.match(header,/class="head-group align-left">[\s\S]*?1 flux/);
+  assert.match(header,/class="head-group align-left">[\s\S]*?1 stream/);
   assert.match(header,/class="head-group align-center">[\s\S]*?Seerr : 0/);
-  assert.match(header,/class="head-group align-right">[\s\S]*?Débit : 2.5 Mb\/s/);
+  assert.match(header,/class="head-group align-right">[\s\S]*?Bitrate : 2.5 Mb\/s/);
   card.render();
   const css=card.shadowRoot.innerHTML;
   assert.match(css,/\.head-metrics\.with-center \{ display:grid;\s*grid-template-columns:minmax\(0,1fr\) max-content minmax\(0,1fr\); \}/);

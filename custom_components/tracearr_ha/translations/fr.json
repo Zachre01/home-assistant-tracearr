@@ -106,19 +106,19 @@
       },
       "devices_plex": {
         "title": "Plex — Local ou Distant",
-        "description": "Choisissez un seul état par appareil. Le choix « Tous les appareils » applique la règle à tout ce serveur, y compris aux futurs appareils, et réinitialise ses exceptions individuelles. Rouvrez ensuite la page pour personnaliser certains appareils."
+        "description": "Choisissez un seul état par appareil. Le choix pour tout le serveur s’applique aussi aux futurs appareils et réinitialise les exceptions de ce serveur. Rouvrez la page pour personnaliser certaines exceptions."
       },
       "devices_jellyfin": {
         "title": "Jellyfin — Local ou Distant",
-        "description": "Choisissez un seul état par appareil. Le choix « Tous les appareils » applique la règle à tout ce serveur, y compris aux futurs appareils, et réinitialise ses exceptions individuelles. Rouvrez ensuite la page pour personnaliser certains appareils."
+        "description": "Choisissez un seul état par appareil. Le choix pour tout le serveur s’applique aussi aux futurs appareils et réinitialise les exceptions de ce serveur. Rouvrez la page pour personnaliser certaines exceptions."
       },
       "devices_emby": {
         "title": "Emby — Local ou Distant",
-        "description": "Choisissez un seul état par appareil. Le choix « Tous les appareils » applique la règle à tout ce serveur, y compris aux futurs appareils, et réinitialise ses exceptions individuelles. Rouvrez ensuite la page pour personnaliser certains appareils."
+        "description": "Choisissez un seul état par appareil. Le choix pour tout le serveur s’applique aussi aux futurs appareils et réinitialise les exceptions de ce serveur. Rouvrez la page pour personnaliser certaines exceptions."
       },
       "devices_other": {
         "title": "Autres appareils — Local ou Distant",
-        "description": "Choisissez un seul état par appareil. Le choix « Tous les appareils » applique la règle à tout ce serveur, y compris aux futurs appareils, et réinitialise ses exceptions individuelles. Rouvrez ensuite la page pour personnaliser certains appareils."
+        "description": "Choisissez un seul état par appareil. Le choix pour tout le serveur s’applique aussi aux futurs appareils et réinitialise les exceptions de ce serveur. Rouvrez la page pour personnaliser certaines exceptions."
       }
     },
     "error": {

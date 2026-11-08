@@ -1,174 +1,176 @@
-# Historique des versions
+# Changelog
 
-Les changements sont classés par version publique. Les préversions et les anciennes notes restent consultables ci-dessous. Les [GitHub Releases](https://github.com/Moosketair/home-assistant-tracearr/releases) permettent de télécharger une version précise.
+Changes are grouped by public version. Prereleases and older notes remain below. [GitHub Releases](https://github.com/Moosketair/home-assistant-tracearr/releases) can download a specific version.
+
+## 0.1.17 — 2026-11-08
+
+- Adaptive stream grid is available again: `mode: grid` with `columns` set to `auto` or `1`–`4`. Cards narrower than 520px use one column. Saved list and carousel cards are unchanged.
+- Home Assistant Sections still owns card width and height. Legacy `height`, `grid_columns`, and `grid_rows` stay ignored.
+- Lovelace card copy, card-picker names, and dynamic options-flow labels are in English. Static French configuration strings remain in `translations/fr.json`.
+- Documentation (README, configuration guide, maintenance notes, and this changelog) is in English.
 
 ## 0.1.16 — 2026-11-05
 
-- Badge centré à largeur intrinsèque : la colonne du centre utilise `max-content` plutôt qu'un tiers fixe de l'en-tête ; les deux colonnes latérales se partagent le reste, conservant le badge au milieu.
-- Suppression du passage systématique du groupe central sur une seconde ligne sous 440 px. Sur les cartes très étroites (moins de 260 px), un retour à la ligne reste possible pour conserver la lisibilité.
-- Aucun changement des réglages enregistrés ; tests de régression responsive ajoutés.
+- Centered badge with an intrinsic width: the center column uses `max-content` instead of a fixed third of the header. The two side columns share the rest, which keeps the badge in the middle.
+- The center group no longer always wraps below 440px. On very narrow cards (under 260px), wrapping is still possible so the badges stay readable.
+- No change to saved settings. Responsive regression tests were added.
 
 ## 0.1.15 — 2026-11-05
 
-- Correction de l'alignement central des badges : trois colonnes de largeur égale lorsque le centre est utilisé, avec badge central étiré et contenu centré.
-- Sur les écrans étroits, le groupe central dispose d'une ligne centrée tandis que les groupes gauche/droite conservent leur disposition compacte.
-- Aucun changement des réglages enregistrés ; les personnalisations et anciennes cartes restent compatibles.
+- Centered badge alignment: three equal columns when the center is used, with the center badge stretched and its content centered.
+- On narrow screens, the center group gets a centered line while the left and right groups keep their compact layout.
+- No change to saved settings. Customizations and older cards stay compatible.
 
 ## 0.1.14 — 2026-11-05
 
-### Affichage et personnalisation
+### Display and customization
 
-- Fond « cinéma » utilisant l'affiche floutée derrière chaque lecture, avec intensité et assombrissement réglables. Repli vers un fond sombre si l'affiche manque.
-- Liseré coloré suivant les angles arrondis de la sous-carte, avec épaisseur réglable, ancien trait droit ou masquage.
-- Taille des affiches configurable entre 50 et 200 % dans les cartes groupées et individuelles, mode compact inclus.
-- Alignement indépendant **gauche, centre ou droite** de chaque badge Tracearr et Home Assistant ; aucun espace réservé aux groupes vides sur mobile.
-- Personnalisation de chaque statistique Tracearr (nom, icône, affichage à zéro, clignotement, durée et couleur), en complément des paramètres globaux.
+- Cinema background using the blurred poster behind each stream, with adjustable strength and dimming. Falls back to a dark surface when the poster is missing.
+- Colored accent that follows the rounded corners of the stream panel, with adjustable thickness, the older straight bar, or hidden.
+- Poster size from 50 to 200 percent on grouped and individual cards, including compact mode.
+- Independent **left, center, or right** alignment for each Tracearr and Home Assistant badge. Empty groups reserve no space on mobile.
+- Per-statistic customization (name, icon, hide at zero, blink, duration, and zero color), in addition to the global settings.
 
-### Images et fiabilité
+### Images and reliability
 
-- Application immédiate des URL signées aux affiches, sans reconstruire le carrousel.
-- Jusqu'à trois nouvelles tentatives après un échec de chargement (2 s, 5 s, 15 s), avec élément de remplacement.
-- Proxy d'images amélioré : négociation des formats, délai porté à 20 s, taille maximale de 8 Mo et contrôle du type de contenu.
-- Configurations existantes conservées par défaut et ajout de tests de non-régression.
+- Signed URLs are applied to posters immediately, without rebuilding the carousel.
+- Up to three retries after a load failure (2s, 5s, 15s), with a fallback element.
+- Improved image proxy: format negotiation, a 20s timeout, an 8 MB maximum, and a content-type check.
+- Existing configurations kept by default, with regression tests.
 
-## Préversions de 0.1.14 — historique conservé
+## 0.1.14 prereleases — kept for history
 
 ### 0.1.14b4 — 2026-11-05
 
-- Préversion validée avec l'alignement mobile corrigé et toutes les options de personnalisation de b2.
-- Nouvelle branche/tag créés pour éviter la mauvaise cible Git du tag b3.
+- Prerelease validated with the mobile alignment fix and every customization option from b2.
+- A new branch and tag were created so the bad Git target of the b3 tag would not be reused.
 
 ### 0.1.14b3 — 2026-11-05
 
-- Correction prévue : supprimer les colonnes de badges vides et éviter deux lignes inutiles sur mobile.
-- **Incident de publication :** le tag Git publié `v0.1.14b3` pointait par erreur vers le code de b1. La correction effective a été publiée dans b4.
+- Planned fix: remove empty badge columns and avoid two unnecessary lines on mobile.
+- **Publishing incident:** the published Git tag `v0.1.14b3` pointed at the b1 code by mistake. The real fix was published in b4.
 
 ### 0.1.14b2 — 2026-11-05
 
-- Alignement par badge (statistique ou entité HA), séparément à gauche, au centre ou à droite.
-- Nouveaux réglages par statistique : nom, icône, masquage si valeur nulle, clignotement et couleur à zéro.
+- Alignment per badge (statistic or Home Assistant entity), separately left, center, or right.
+- New per-statistic settings: name, icon, hide when the value is zero, blink, and zero color.
 
-### 0.1.14b1 / préparation initiale de 0.1.14 — 2026-11-05
+### 0.1.14b1 / initial 0.1.14 preparation — 2026-11-05
 
-- Fond cinéma flouté, liseré arrondi, taille des affiches et renforcement de leur chargement.
-- Alignement automatique des badges à gauche lorsque le titre est masqué.
+- Blurred cinema background, rounded accent, poster size, and more reliable poster loading.
+- Badges align to the left automatically when the title is hidden.
 
 ## 0.1.13 Alpha (2026-11-04)
 
-- Déplacement du choix Liste/Carrousel dans « Affichage général » pour la carte groupée ; suppression de la catégorie autonome « Disposition ».
-- Dans « En-tête et badges → Statistiques Tracearr », retour à de simples cases à cocher pour chaque compteur, sans sous-panneau individuel.
-- Aucune modification des valeurs sauvegardées, des autres sections, des capteurs ou de l’icône existante.
+- Moved the list/carousel choice into "General display" for the grouped card, and removed the separate "Layout" category.
+- In "Header and badges → Tracearr statistics", returned to simple checkboxes for each counter, without an individual sub-panel.
+- No change to saved values, the other sections, the sensors, or the existing icon.
 
 ## 0.1.12 Alpha (2026-11-04)
 
-- Sélection visuelle du flux de la carte individuelle : session active, utilisateur, serveur, ou lecture la plus récente. La sélection utilisateur reste valable pour les prochaines lectures.
-- Suppression du mode grille adaptative (migration automatique des cartes existantes vers la liste verticale).
-- Suppression des réglages de taille dans l'éditeur : largeur/hauteur pilotées exclusivement par la mise en page native de Home Assistant Sections.
-- Formulaires groupés pour les localisations LAN/WAN par appareil et pour les alias utilisateur ; les valeurs précédemment enregistrées sont automatiquement préremplies et conservées.
-- Récupération facultative de jusqu'à 500 lectures historiques pour identifier également les appareils inactifs, en plus des appareils actifs et déjà configurés.
-- Éditeur Lovelace réorganisé avec une catégorie Affichage général et des panneaux repliables par badge/compteur dans l'en-tête.
-- Aucune modification de l'icône validée, des réglages existants d'avatars ni des capteurs API.
+- Visual selection for the individual card: active session, user, server, or most recent stream. A user selection stays valid for later playback.
+- Removed the adaptive grid (existing cards were migrated to the vertical list). Restored in 0.1.17.
+- Removed size controls from the editor. Width and height are controlled only by the native Home Assistant Sections layout.
+- Grouped forms for LAN/WAN locations by device and for user aliases. Previously saved values are prefilled and kept.
+- Optional fetch of up to 500 history records so inactive devices can be identified, in addition to active and already configured devices.
+- Lovelace editor reorganized with a General display category and collapsible panels per header badge.
+- No change to the approved icon, existing avatar settings, or API sensors.
 
 ## 0.1.11 Alpha (2026-11-04)
 
-- Remplacement de l’icône locale de l’intégration par la variante minimaliste validée : maison cyan, bouton lecture et barre de progression, en 256 et 512 pixels.
-- Pas de reprise du logo officiel Tracearr ni du logo protégé Home Assistant.
-- Documentation du problème connu HACS : absence d’icône dans les listes HACS malgré son affichage dans les intégrations Home Assistant.
-- Mise à jour de la version et du chargement des ressources. Aucun changement fonctionnel à l’API ni aux cartes.
+- Replaced the local integration icon with the approved minimal variant: a cyan house, a play button, and a progress bar, at 256 and 512 pixels.
+- Does not reuse the official Tracearr logo or the protected Home Assistant logo.
+- Documented the known HACS issue: no icon in HACS lists even when Home Assistant integrations show it.
+- Updated the version and resource loading. No functional change to the API or the cards.
 
 ## 0.1.10 Alpha (2026-11-04)
 
-- Chronomètre : « temps écoulé / temps restant » regroupés à gauche ; « Fin à HH:mm » aligné à droite.
-- L'état « En pause » reste visible à côté du temps écoulé ; pas d'heure de fin estimée tant que la lecture est en pause.
-- Ajout des validations HACS et hassfest à GitHub Actions, pour préparer une candidature au catalogue HACS.
-- Conservation de l'icône indépendante pour le moment : le logo officiel de Tracearr nécessitera une vérification des droits de réutilisation et des marques.
-
-# Historique des versions
+- Clock: elapsed / remaining grouped on the left; "Ends at HH:mm" aligned on the right.
+- "Paused" stays visible next to the elapsed time. No estimated end time while playback is paused.
+- Added HACS and hassfest validation to GitHub Actions, in preparation for the HACS catalog.
+- Kept the independent icon for now. Using the official Tracearr logo would need a check of reuse rights and trademarks.
 
 ## 0.1.8 — Alpha (2026-11-03)
 
-- Horloges écoulée/restante calculées à partir du même nombre entier de secondes, sur une seule mise à jour, pour supprimer les décalages d’arrondi.
-- Heure de fin de lecture estimée (HH:mm), masquée lors des pauses et activable indépendamment de la barre.
-- Nouvelles icônes originales de clap vidéo et haut-parleur, sans reprendre les fichiers graphiques soumis à attribution.
-- Badges d’en-tête : masquage des valeurs à zéro, clignotement au-dessus de zéro avec période réglable, couleur spécifique à zéro et affichage des noms facultatif.
-- Par badge d’entité Home Assistant : icône du capteur, nom facultatif, visibilité si valeur positive, animation, durée et couleur à zéro personnalisable.
-- Respect de `prefers-reduced-motion` pour ne pas imposer le clignotement.
-
+- Elapsed and remaining clocks calculated from the same whole number of seconds, in one update, so rounding no longer drifts.
+- Estimated end time (HH:mm), hidden while paused, and independent of the progress bar.
+- New original video-clapper and speaker icons, without reusing graphics that require attribution.
+- Header badges: hide zero values, blink above zero with an adjustable period, a specific zero color, and optional names.
+- Per Home Assistant entity badge: sensor icon, optional name, visibility when the value is positive, animation, duration, and a custom zero color.
+- Honors `prefers-reduced-motion` so blinking is not forced.
 
 ## 0.1.7 — Alpha (2026-11-03)
 
-- Séparation des interrupteurs « Afficher la saison » et « Afficher le numéro d’épisode », avec maintien de l'ordre personnalisable et des formats `S01E02` / `Saison 1 · Épisode 2`. Compatibilité avec l'ancien réglage `series_show_season_episode`.
-- Filtre des badges de débit et du total de débit : Tous, Local ou Distant. La classification s’appuie sur des correspondances explicitement saisies pour les comptes/appareils, car Tracearr v2 ne fournit pas les IP ni le statut LAN/WAN dans `/streams`.
-- Badges d’en-tête liés à des entités Home Assistant arbitraires, avec sélecteur natif, nom facultatif, valeur et unité actualisées en direct, jusqu'à 20 badges par carte. Une mise à jour d'un capteur ne reconstruit pas le carrousel.
-- Trois comportements en l’absence de flux : message personnalisable, en-tête seul, ou carte complètement masquée. Conservation de l’ancien `hide_empty`.
-- Tests JavaScript de migration, affichage et ordre des épisodes, compteurs Home Assistant, réseau non classé, mise à jour du bandeau et états vides.
-
+- Separate "Show season" and "Show episode number" switches, with the customizable order and the `S01E02` / `Season 1 · Episode 2` formats. Compatible with the older `series_show_season_episode` setting.
+- Bitrate badge and total bitrate filter: All, Local, or Remote. Classification uses explicit account and device matches, because Tracearr v2 does not provide IPs or LAN/WAN status in `/streams`.
+- Header badges bound to arbitrary Home Assistant entities, with the native picker, an optional name, and a live value and unit, up to 20 badges per card. A sensor update does not rebuild the carousel.
+- Three behaviors when there is no stream: a custom message, the header only, or a fully hidden card. The older `hide_empty` setting is kept.
+- JavaScript tests for migration, episode display and order, Home Assistant counters, unclassified networks, header updates, and empty states.
 
 ## 0.1.6 — Alpha (2026-11-03)
 
-- Options séparées pour les titres et les années des films et des séries, le titre de l’épisode et la saison/numéro d’épisode.
-- Choix du format de saison/épisode : `S01E02` ou `Saison 1 · Épisode 2`.
-- Ordre libre des informations (année incluse) par boutons haut/bas dans l’éditeur graphique, séparément pour films et séries.
-- Couleur indépendante des badges de l’en-tête : palette commune, thème Home Assistant, couleurs Plex/Jellyfin/Emby ou couleur personnalisée, avec contraste automatique.
-- Correction des changements brusques du carrousel lors de mises à jour SSE des états, débits et métadonnées : mise à jour des cartes en place, sans interrompre le défilement du conteneur.
-- Conservation de la lecture affichée si la liste change et que ce flux existe toujours ; intervalle de défilement réinitialisé après les navigations manuelles.
-- Nouveaux tests de non-régression pour les ordres, les filtres de visibilité, la palette des badges et la stabilité du carrousel.
+- Separate options for movie and series titles and years, the episode title, and the season/episode number.
+- Season/episode format: `S01E02` or `Season 1 · Episode 2`.
+- Free order of the fields (including the year) with up/down buttons in the visual editor, separately for movies and series.
+- Independent header-badge color: shared palette, Home Assistant theme, Plex/Jellyfin/Emby colors, or a custom color, with automatic contrast.
+- Carousel no longer jumps when SSE updates state, bitrate, or metadata. Cards update in place without interrupting the container scroll.
+- The displayed stream is kept if the list changes and that stream still exists. The scroll interval resets after manual navigation.
+- New regression tests for order, visibility filters, the badge palette, and carousel stability.
 
 ## 0.1.5 — Alpha (2026-11-03)
 
-- Correction des oscillations des temps de lecture et du temps restant observées dans les cartes : les positions SSE légèrement en retard ne réinitialisent plus l’horloge toutes les deux secondes.
-- Horloge monotone locale pour l’animation à 250 ms, avec synchronisation douce (200 ms maximum par nouvel échantillon), sans retour en arrière durant une lecture normale.
-- Détection des déplacements volontaires dans le film (avance/retour de plusieurs secondes) : synchronisation immédiate de la nouvelle position.
-- Les reconstructions de la carte préservent l’horloge de chaque session ; mise en pause fige les compteurs et reprise les relance.
-- Tests de non-régression avec échantillons SSE irréguliers, mise en pause/reprise et sauts volontaires.
-
+- Fixed playback and remaining-time oscillation on the cards. Slightly late SSE positions no longer reset the clock every two seconds.
+- Local monotonic clock for the 250ms animation, with a soft sync (200ms maximum per new sample) and no rewind during normal playback.
+- Detects intentional seeks of several seconds and syncs to the new position immediately.
+- Card rebuilds keep each session's clock. Pause freezes the counters, and resume starts them again.
+- Regression tests with irregular SSE samples, pause/resume, and intentional seeks.
 
 ## 0.1.4 — Alpha (2026-11-03)
 
-- Restauration du cadre extérieur natif `ha-card` : fond, bordure, rayon et ombre pilotés par le thème Home Assistant. Les panneaux intérieurs conservent un fond légèrement contrasté, ou transparent au choix.
-- Bandeau d’en-tête entièrement désactivable, titre personnalisable et statistiques activables séparément : total des flux, débit total, lectures directes, en pause, transcodage vidéo seul/audio seul/les deux, total des transcodages et nombre de flux par serveur.
-- Les statistiques d’en-tête correspondent aux flux réellement affichés après application des filtres, y compris pour les vues d’un seul utilisateur.
-- Couleur commune pour la progression, les badges de résolution/débit et les statistiques : thème HA, couleur Plex/Jellyfin/Emby ou couleur hexadécimale personnalisée. Choix automatique de l’écriture blanche ou noire pour maximiser le contraste.
-- Affiches centrées verticalement même lorsque le pied d’informations occupe plusieurs lignes ; correction d’une puce de séparation inutile si les codecs sont absents.
-- Éditeur visuel regroupé dans des catégories repliables : En-tête et statistiques, Disposition et dimensions, Navigation et carrousel, Contenu de la lecture, Bandeau d’informations du flux, Apparence et couleurs, Filtres et tri, Noms et avatars.
-- Migration des anciens réglages `show_counter`, `show_transcodes`, `progress_color_mode`, `progress_custom_color` pour préserver les dashboards existants.
-- Nouveaux tests sur le contraste, les métriques, les anciennes configurations, le style de la carte et le regroupement de l’éditeur.
+- Restored the native `ha-card` outer frame: background, border, radius, and shadow come from the Home Assistant theme. Inner panels keep a slightly contrasted background, or transparent if chosen.
+- Header can be turned off entirely, the title can be customized, and statistics can be enabled separately: stream total, total bitrate, direct plays, paused, video-only / audio-only / both transcodes, total transcodes, and streams per server.
+- Header statistics match the streams actually shown after filters, including single-user views.
+- One color for progress, resolution/bitrate badges, and statistics: Home Assistant theme, Plex/Jellyfin/Emby color, or a custom hex color. White or black text is chosen for contrast.
+- Posters stay vertically centered when the footer wraps onto several lines. A useless separator chip is no longer shown when codecs are missing.
+- Visual editor grouped into collapsible categories.
+- Migration of the older `show_counter`, `show_transcodes`, `progress_color_mode`, and `progress_custom_color` settings so existing dashboards are preserved.
+- New tests for contrast, metrics, older configurations, card style, and editor grouping.
 
 ## 0.1.3 — Alpha (2026-11-03)
 
-- Barre de défilement horizontale masquée de façon permanente dans le carrousel.
-- Boutons de navigation affichables ou masquables, sans désactiver le glissement tactile.
-- Navigation au cliquer-glisser à la souris et au clavier ; option pour désactiver le glissement souris.
-- Deux icônes séparées (vidéo et audio) : vert pour lecture directe, orange pour transcodage, gris si indéterminé. Les anciens badges textuels de transcodage par flux disparaissent.
-- Lecture en pause : symbole de pause sur l'affiche, « En pause » orange à la place du temps restant, sans assombrir toute la carte.
-- Fond des cartes transparent, informations en blanc, taille des polices personnalisable (10 à 28 px).
-- Couleur de progression au choix : thème Home Assistant, couleur de serveur ou couleur personnalisée (validation hexadécimale).
-- Mise à disposition d'une hauteur explicite et de limites de taille pour permettre le redimensionnement vertical natif dans les dashboards Sections ; la grille native est prioritaire sur la hauteur CSS.
-- Tests supplémentaires sur les couleurs, états de pause, dimensionnement et navigation.
+- Carousel horizontal scrollbar hidden permanently.
+- Navigation buttons can be shown or hidden without disabling touch drag.
+- Mouse drag and keyboard navigation. Mouse drag can be turned off.
+- Two separate icons (video and audio): green for direct play, orange for transcode, gray when unknown. The older per-stream text transcode badges are gone.
+- Paused playback: a pause symbol on the poster, and orange "Paused" in place of the remaining time, without dimming the whole card.
+- Transparent card backgrounds, white information text, and a customizable font size (10 to 28px).
+- Progress color: Home Assistant theme, server color, or a custom color (hex validated).
+- An explicit height and size limits so native vertical resize works on Sections dashboards. The native grid takes priority over CSS height.
+- Extra tests for colors, pause states, sizing, and navigation.
 
 ## 0.1.2 — Alpha (2026-11-03)
 
-- Correction du défilement automatique : les flux avancent dans l'ordre et reviennent au premier après le dernier, même en cas de mises à jour SSE fréquentes.
-- Conservation de la position du carrousel quand seule la progression d'un média change.
-- Ajout d'une durée de transition réglable (100 à 3000 ms).
-- Ajout de cinq effets : glissement, fondu, zoom, retournement 3D et sans animation.
-- Ajout d'un réglage pour masquer la barre de défilement horizontale du carrousel.
-- Liseré de couleur adapté au serveur : Plex (jaune/orange), Jellyfin (violet), Emby (vert).
-- Documentation GitHub entièrement en français.
-- Nouveaux tests JavaScript de navigation, d'animation, de couleurs et d'affichage.
+- Autoplay fix: streams advance in order and return to the first after the last, even with frequent SSE updates.
+- Carousel position is kept when only media progress changes.
+- Adjustable transition duration (100 to 3000ms).
+- Five effects: slide, fade, zoom, 3D flip, and no animation.
+- A setting to hide the carousel's horizontal scrollbar.
+- Server-colored accent: Plex (yellow/orange), Jellyfin (purple), Emby (green).
+- GitHub documentation was written in French at this point. It is in English from 0.1.17.
+- New JavaScript tests for navigation, animation, colors, and display.
 
 ## 0.1.1 — Alpha (2026-11-03)
 
-- Correction du démarrage sur les versions récentes de Home Assistant (`LovelaceData.resource_mode` au lieu de `mode`).
-- Maintien de la compatibilité avec les anciennes versions.
-- Actualisation de la ressource Lovelace et ajout de tests de non-régression.
+- Startup fix on recent Home Assistant versions (`LovelaceData.resource_mode` instead of `mode`).
+- Compatibility with older versions is kept.
+- Lovelace resource refresh and regression tests.
 
 ## 0.1.0 — Alpha (2026-11-03)
 
-- Première intégration Home Assistant de l'API publique Tracearr v2.
-- Connexion SSE unique et synchronisation REST de secours.
-- Capteurs de flux actifs, transcodages séparés et disponibilité des serveurs.
-- Deux cartes Lovelace : regroupée et individuelle ; liste, grille et carrousel.
-- Éditeur visuel, filtres, progression, images, alias et avatars.
+- First Home Assistant integration of the Tracearr public API v2.
+- One SSE connection and a REST fallback sync.
+- Sensors for active streams, separate transcodes, and server availability.
+- Two Lovelace cards: grouped and individual; list, grid, and carousel.
+- Visual editor, filters, progress, images, aliases, and avatars.
 
-**Version Alpha : validation complète sur plusieurs installations Home Assistant encore nécessaire.**
+**Alpha note: full validation across several Home Assistant installations was still required at this point.**

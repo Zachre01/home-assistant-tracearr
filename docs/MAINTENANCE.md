@@ -1,21 +1,21 @@
-# Maintenance de Tracearr HA
+# Maintaining Tracearr HA
 
-Retour au [README](../README.md) · [CHANGELOG](../CHANGELOG.md)
+Back to the [README](../README.md) · [Changelog](../CHANGELOG.md)
 
-## Publier une mise à jour
+## Publish an update
 
-Tracearr HA figure dans le catalogue HACS depuis la fusion de [hacs/default#13306](https://github.com/hacs/default/pull/13306). **Aucune nouvelle demande d'ajout au catalogue n'est nécessaire pour publier une mise à jour.**
+Tracearr HA is in the HACS catalog since [hacs/default#13306](https://github.com/hacs/default/pull/13306) was merged. **Publishing an update does not require a new catalog submission.**
 
-1. Préparer et tester les modifications sur une branche de développement, avec une version cohérente dans `custom_components/tracearr_ha/manifest.json`, dans le cache de la ressource Lovelace (`frontend.py`) et dans le bandeau du fichier JavaScript.
-2. Mettre à jour les notes de version dans `CHANGELOG.md` ; conserver les sections historiques. Résumer seulement les changements principaux dans `README.md`.
-3. Faire passer les tests Python, JavaScript, HACS et hassfest via [GitHub Actions](https://github.com/Moosketair/home-assistant-tracearr/actions).
-4. Pour publier une version publique, fusionner le code vérifié dans `main` avec un commit intitulé exactement `release: vX.Y.Z`. Le workflow `publish-release.yml` valide à nouveau le dépôt, puis crée le tag et la GitHub Release au même commit.
-5. **Vérifier après publication** que le tag et la Release désignent le bon SHA. C'est le tag (et non seulement le champ « Target » de la Release) qui détermine le code téléchargé par HACS.
-6. HACS peut mettre un peu de temps à proposer la nouvelle version après la synchronisation des Releases. Redémarrer HA après installation et actualiser la page pour recharger le JS.
+1. Prepare and test the changes on a development branch, with the same version in `custom_components/tracearr_ha/manifest.json`, the Lovelace resource cache (`frontend.py`), and the banner at the top of the JavaScript file.
+2. Update the release notes in `CHANGELOG.md` and keep the historical sections. Summarize only the main changes in `README.md`.
+3. Run the Python tests, JavaScript tests, HACS, and hassfest checks through [GitHub Actions](https://github.com/Moosketair/home-assistant-tracearr/actions).
+4. To publish a public version, merge the verified code into `main` with a commit titled exactly `release: vX.Y.Z`. The `publish-release.yml` workflow validates the repository again, then creates the tag and the GitHub Release on that same commit.
+5. **After publishing, confirm** that the tag and the Release point at the right SHA. HACS downloads the code from the tag, not only from the Release "Target" field.
+6. HACS can take a little time to offer the new version after Releases sync. Restart Home Assistant after installing, and refresh the page so the JavaScript reloads.
 
-Pour une **préversion**, utiliser une branche et un manifeste distincts (ex. `0.1.15b1`), créer le tag sur le bon commit, publier une Release cochée **Pre-release**, puis vérifier le tag avant installation. Les préversions ne remplacent pas automatiquement les Releases stables pour les utilisateurs ne les ayant pas activées.
+For a **prerelease**, use a separate branch and manifest (for example `0.1.15b1`), create the tag on the correct commit, publish a Release marked **Pre-release**, and check the tag before installing. Prereleases do not automatically replace stable releases for users who have not enabled them.
 
-### Commandes de vérification locale
+### Local checks
 
 ```bash
 python -m compileall -q custom_components
@@ -24,18 +24,18 @@ node --check custom_components/tracearr_ha/frontend/tracearr-card.js
 node --test tests/test_carousel.cjs
 ```
 
-## Marque, licence et affiliation
+## Trademark, license, and affiliation
 
-Ce projet est sous [licence MIT](../LICENSE), mais n'est ni maintenu ni approuvé par Tracearr, Home Assistant, Plex, Jellyfin ou Emby. Le dépôt Tracearr annonce une licence AGPL-3.0 pour son logiciel : **cette licence ne donne pas automatiquement une autorisation d'utiliser son logo comme identité d'un projet tiers**.
+This project is under the [MIT License](../LICENSE). It is not maintained or endorsed by Tracearr, Home Assistant, Plex, Jellyfin, or Emby. The Tracearr repository states an AGPL-3.0 license for its software. **That license does not automatically allow using its logo as the identity of a third-party project.**
 
-Par prudence, Tracearr HA conserve une icône propre (maison cyan, lecture et progression) dans `custom_components/tracearr_ha/brand/icon.png` et `icon@2x.png`. Aucune utilisation du logo officiel de Tracearr ou Home Assistant n'est revendiquée.
+Tracearr HA keeps its own icon (a cyan house, a play mark, and a progress bar) in `custom_components/tracearr_ha/brand/icon.png` and `icon@2x.png`. It does not claim to use the official Tracearr or Home Assistant logo.
 
-## Icône et affichage dans HACS
+## Icon display in HACS
 
-Sur les versions de Home Assistant prenant en charge les icônes locales (notamment 2026.3+), l'icône de l'intégration apparaît dans **Paramètres → Appareils et services**. Certaines versions de HACS affichent encore « icon not available », car leur affichage utilise d'autres sources de marques que les icônes locales. Suivi du problème : [hacs/integration#5223](https://github.com/hacs/integration/issues/5223) et [hacs/integration#5402](https://github.com/hacs/integration/issues/5402).
+On Home Assistant versions that support local integration icons (notably 2026.3+), the icon appears in **Settings → Devices & services**. Some HACS versions still show "icon not available" because their lists use other brand sources than the local icons. The issue is tracked in [hacs/integration#5223](https://github.com/hacs/integration/issues/5223) and [hacs/integration#5402](https://github.com/hacs/integration/issues/5402).
 
-Ne pas ajouter des fichiers ou modifier le nom du domaine dans le seul but de masquer ce symptôme sans comprendre la cause et les exigences officielles de HACS.
+Do not add files or change the domain name only to hide that symptom without understanding the cause and the official HACS requirements.
 
-## Suivi des évolutions
+## Tracking changes
 
-Les modifications livrées sont consignées dans [CHANGELOG.md](../CHANGELOG.md) et dans les [GitHub Releases](https://github.com/Moosketair/home-assistant-tracearr/releases). Les améliorations futures et les anomalies doivent plutôt être suivies comme [issues GitHub](https://github.com/Moosketair/home-assistant-tracearr/issues) : le README reste un guide d'installation et d'utilisation, pas une liste de tâches.
+Shipped changes are recorded in [CHANGELOG.md](../CHANGELOG.md) and in the [GitHub Releases](https://github.com/Moosketair/home-assistant-tracearr/releases). Future improvements and bugs should be tracked as [GitHub issues](https://github.com/Moosketair/home-assistant-tracearr/issues). The README stays an installation and usage guide, not a task list.

@@ -1,60 +1,66 @@
 # Tracearr HA
 
-[![Validation GitHub Actions](https://github.com/Moosketair/home-assistant-tracearr/actions/workflows/validate.yml/badge.svg)](https://github.com/Moosketair/home-assistant-tracearr/actions/workflows/validate.yml)
-[![HACS](https://img.shields.io/badge/HACS-Catalogue%20officiel-41BDF5)](https://github.com/hacs/default/pull/13306)
-[![Licence MIT](https://img.shields.io/badge/licence-MIT-blue)](LICENSE)
+[![GitHub Actions validation](https://github.com/Moosketair/home-assistant-tracearr/actions/workflows/validate.yml/badge.svg)](https://github.com/Moosketair/home-assistant-tracearr/actions/workflows/validate.yml)
+[![HACS](https://img.shields.io/badge/HACS-Default%20repository-41BDF5)](https://github.com/hacs/default/pull/13306)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**Surveillez les lectures Plex, Jellyfin et Emby dans Home Assistant avec les données de Tracearr.** L'intégration comprend des capteurs, une connexion temps réel et deux cartes Lovelace personnalisables (lectures groupées ou lecture individuelle).
+**Watch Plex, Jellyfin, and Emby playback in Home Assistant with data from Tracearr.** The integration includes sensors, a live connection, and two customizable Lovelace cards (grouped streams, or a single stream).
 
-**Version actuelle : 0.1.16** · Disponible dans le catalogue officiel HACS après publication de la Release. Le projet reste communautaire et évolutif ; testez les capteurs avant de les utiliser pour des automatismes critiques.
+**Current version: 0.1.17** · Available in the official HACS catalog after the release is published. This is a community project that is still evolving. Test the sensors before using them for critical automations.
 
-## Nouveautés de la 0.1.16
+## What's new in 0.1.17
 
-- **Badge centré compact :** le groupe central prend uniquement la largeur de ses badges et garde son centrage exact. Sur les écrans mobiles, les groupes gauche, centre et droite restent sur la même ligne dès que la place disponible le permet.
+- **Adaptive grid is back:** grouped cards can show streams in an automatic or fixed column grid (`mode: grid`, `columns: auto` or `1`–`4`). Cards narrower than 520px collapse to one column. Home Assistant Sections still controls the card's width and height.
+- **English interface:** the Lovelace cards, options-flow labels, and documentation are in English. A French Home Assistant language still uses `translations/fr.json` for the static configuration screens.
 
-### Autres améliorations récentes (0.1.15)
+### Recent improvements (0.1.16)
 
-- **Badge réellement centré :** lorsqu'un badge est placé au centre, la grille utilise des colonnes de même largeur et centre le contenu de sa colonne, indépendamment de la longueur des badges latéraux. Sur écran étroit, le badge central occupe sa propre ligne centrée.
+- **Compact centered badge:** the center group is only as wide as its badges and stays exactly centered. On small screens, the left, center, and right groups stay on one line whenever there is room.
 
-### Autres améliorations récentes (0.1.14)
+### Recent improvements (0.1.15)
 
-- **Fond cinéma** : affiche floutée derrière chaque lecture, avec intensité et assombrissement réglables, et repli vers un fond sombre si l'image manque.
-- **Liseré amélioré** : bord coloré épousant les arrondis, réglable en épaisseur, remplaçable par le trait droit ou masquable.
-- **Affiches plus fiables** : tailles de 50 à 200 %, récupération des URL signées dès leur disponibilité, trois nouvelles tentatives en cas d'erreur.
-- **Badges d'en-tête sur mesure** : statistiques Tracearr et entités Home Assistant alignables individuellement à gauche, au centre ou à droite ; personnalisation du nom, de l'icône, du masquage à zéro, du clignotement et de la couleur à zéro.
-- **Affichage mobile corrigé** : les badges à gauche et à droite partagent une ligne quand la largeur le permet, sans colonne centrale vide.
+- **Truly centered badge:** when a badge is centered, the header uses equal side tracks and centers the middle content, regardless of how long the side badges are. On a very narrow card, the center group can wrap to its own line.
 
-Consultez le [journal complet des versions](CHANGELOG.md) pour retrouver toutes les améliorations et corrections précédentes.
+### Recent improvements (0.1.14)
 
-## Installation avec HACS
+- **Cinema background:** a blurred poster behind each stream, with adjustable blur and dimming, falling back to a dark surface when the image is missing.
+- **Improved accent:** a colored edge that follows the rounded corners, with adjustable thickness, or the older straight bar, or hidden.
+- **More reliable posters:** sizes from 50 to 200 percent, signed URLs applied as soon as they arrive, and three retries after a load error.
+- **Custom header badges:** Tracearr statistics and Home Assistant entities can each align left, center, or right, with a custom name, icon, hide-at-zero, blink, and zero color.
+- **Mobile layout:** left and right badges share a row when the width allows it, with no empty center column.
 
-1. Dans **HACS**, recherchez **Tracearr HA** puis cliquez sur **Télécharger**.
-2. **Redémarrez Home Assistant** après l'installation ou la mise à jour.
-3. Ouvrez **Paramètres → Appareils et services → Ajouter une intégration → Tracearr HA**.
-4. Renseignez l'adresse de votre serveur Tracearr et la clé API publique `trr_pub_...` obtenue dans **Tracearr → Paramètres → Données et API → API**.
-5. Dans votre tableau de bord, utilisez **Modifier → Ajouter une carte**, puis recherchez **Tracearr**.
+See the [full changelog](CHANGELOG.md) for earlier improvements and fixes.
 
-L'intégration conserve les réglages des cartes et les entrées de configuration Home Assistant lors des mises à jour normales. Après une mise à jour, rechargez aussi le navigateur avec `Ctrl + F5` (ou actualisez la page sur mobile).
+## Install with HACS
 
-**Carte non proposée dans Lovelace ?** Vérifiez dans **Paramètres → Tableaux de bord → Ressources** qu'il n'existe qu'une seule ressource Module JavaScript pour `/tracearr_ha/tracearr-card.js?v=0.1.16`. En mode YAML, la ressource se configure manuellement.
+1. In **HACS**, search for **Tracearr HA** and choose **Download**.
+2. **Restart Home Assistant** after installing or updating.
+3. Open **Settings → Devices & services → Add integration → Tracearr HA**.
+4. Enter your Tracearr server address and the public API key `trr_pub_...` from **Tracearr → Settings → Data & API → API**.
+5. On a dashboard, use **Edit → Add card**, then search for **Tracearr**.
 
-## Ce que propose Tracearr HA
+Normal updates keep existing card settings and the Home Assistant configuration entry. After an update, reload the browser with `Ctrl + F5` (or refresh the page on mobile).
 
-- **Suivi en direct** des lectures, avec synchronisation SSE et interrogation REST de secours.
-- **Capteurs** : flux en cours, lectures directes, types de transcodages, débit estimé et disponibilité des serveurs.
-- **Deux cartes** : `custom:tracearr-streams-card` (liste ou carrousel) et `custom:tracearr-stream-card` (une lecture).
-- **Carrousel** : défilement automatique facultatif, effets de transition, flèches, navigation tactile, au clavier et à la souris.
-- **Personnalisation** : titres et épisodes, jaquettes, avatars, progression, durée restante, heure de fin estimée, badges, couleurs par serveur et mode compact.
-- **Appareils locaux/distants** : classement manuel par utilisateur ou appareil, avec filtrage des débits.
-- **Affichage natif Home Assistant** : dimensions pilotées par la mise en page *Sections*, sans imposer une taille de carte.
+**Card missing from Lovelace?** In **Settings → Dashboards → Resources**, confirm there is only one JavaScript module resource for `/tracearr_ha/tracearr-card.js?v=0.1.17`. In YAML mode, add that resource yourself.
 
-## Exemples rapides
+## What Tracearr HA provides
 
-**Lectures groupées avec fond flouté et badges :**
+- **Live playback** with SSE updates and a REST fallback.
+- **Sensors** for active streams, direct plays, transcode types, estimated bitrate, and server availability.
+- **Two cards:** `custom:tracearr-streams-card` (list, grid, or carousel) and `custom:tracearr-stream-card` (one stream).
+- **Carousel:** optional autoplay, transition effects, arrows, and touch, keyboard, and mouse navigation.
+- **Customization:** titles and episodes, posters, avatars, progress, remaining time, estimated end time, badges, per-server colors, and compact mode.
+- **Local and remote devices:** manual classification by user or device, with bitrate filtering.
+- **Native Home Assistant layout:** size comes from the Sections layout, without a forced card size.
+
+## Quick examples
+
+**Grouped streams with a blurred background and badges:**
 
 ```yaml
 type: custom:tracearr-streams-card
-mode: list
+mode: grid
+columns: auto
 stream_surface: blur
 stream_blur: 26
 stream_overlay: 72
@@ -69,7 +75,7 @@ header_metric_settings:
     align: right
 ```
 
-**Une lecture individuelle (dernière session active) :**
+**One stream (the latest active session):**
 
 ```yaml
 type: custom:tracearr-stream-card
@@ -79,29 +85,29 @@ poster_size: 110
 show_end_time: true
 ```
 
-Pour sélectionner l'utilisateur et le serveur sans saisir d'identifiants, utilisez l'éditeur visuel. Les réglages existants restent compatibles.
+Use the visual editor to pick a user or server without typing identifiers. Existing settings stay compatible.
 
-## Personnalisation et documentation
+## Customization and documentation
 
-Tous les paramètres principaux sont disponibles dans l'éditeur graphique. Pour les valeurs YAML, les exemples complets et les comportements spécifiques :
+The main settings are in the visual editor. For YAML values, full examples, and specific behavior:
 
-- [Guide complet des cartes et options](docs/CONFIGURATION.md)
-- [Historique des versions et améliorations](CHANGELOG.md)
-- [Maintenance, publication HACS et notes sur les marques/icônes](docs/MAINTENANCE.md)
+- [Card and options guide](docs/CONFIGURATION.md)
+- [Version history](CHANGELOG.md)
+- [Maintenance, HACS publishing, and trademark notes](docs/MAINTENANCE.md)
 
-## Compatibilité et limites
+## Compatibility and limits
 
-- Home Assistant **2025.6+** ; Tracearr avec **API publique v2** (SSE à partir de Tracearr 2.7.0, sinon interrogation périodique).
-- Navigateurs récents Chromium, Firefox et Safari.
-- L'API publique utilisée ne permet pas de détecter automatiquement si un flux est local ou distant : les correspondances doivent être configurées manuellement.
-- L'arrêt à distance d'une lecture n'est pas implémenté.
-- L'intégration affiche les informations transmises par Tracearr ; elles peuvent être incomplètes ou différées.
+- Home Assistant **2025.6+**. Tracearr with the **public API v2** (SSE from Tracearr 2.7.0; otherwise periodic polling).
+- Recent Chromium, Firefox, and Safari browsers.
+- The public API used here cannot tell whether a stream is local or remote. Those matches have to be configured manually.
+- Stopping a stream remotely is not implemented.
+- The integration shows what Tracearr sends. That information can be incomplete or delayed.
 
-## Dépannage rapide
+## Quick troubleshooting
 
-- **Aucun capteur :** contrôlez l'URL, la clé API et **Paramètres → Système → Journaux**.
-- **Carte manquante ou ancienne interface :** vérifiez l'unique ressource JavaScript ci-dessus, redémarrez Home Assistant et rechargez le cache du navigateur.
-- **Affiche absente :** vérifiez que Tracearr fournit `poster_url` et consultez les erreurs réseau/journaux. Le fond cinéma reste sombre sans affiche.
-- **Carrousel immobile :** vérifiez le nombre de flux visibles, la lecture automatique, les préférences d'animation et la pause au survol.
+- **No sensors:** check the URL, the API key, and **Settings → System → Logs**.
+- **Missing card or an old interface:** confirm the single JavaScript resource above, restart Home Assistant, and reload the browser cache.
+- **Missing poster:** confirm Tracearr provides `poster_url` and check network errors and logs. The cinema background stays dark without a poster.
+- **Carousel does not move:** check the number of visible streams, autoplay, animation preferences, and pause-on-hover.
 
-**Licence MIT.** Projet communautaire indépendant, sans affiliation ou approbation officielle de Tracearr, Home Assistant, Plex, Jellyfin ou Emby. Son icône est une création distincte.
+**MIT License.** Independent community project, with no affiliation or official endorsement from Tracearr, Home Assistant, Plex, Jellyfin, or Emby. Its icon is a separate design.

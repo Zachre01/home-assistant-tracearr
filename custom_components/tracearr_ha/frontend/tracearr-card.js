@@ -1,17 +1,17 @@
-/* Tracearr HA Lovelace cards 0.1.16 - no external frontend dependencies. */
+/* Tracearr HA Lovelace cards 0.1.17 - no external frontend dependencies. */
 (() => {
   "use strict";
   if (customElements.get("tracearr-streams-card")) return;
 
   const DEFAULTS = {
-    mode: "list", carousel_visible: 1, carousel_autoplay: false,
+    mode: "list", columns: "auto", carousel_visible: 1, carousel_autoplay: false,
     carousel_interval: 7, carousel_transition: "slide", carousel_transition_speed: 600,
     carousel_hide_scrollbar: true, carousel_show_arrows: true, carousel_mouse_drag: true,
     carousel_pause_on_hover: false, compact: false, show_title: true, show_counter: true,
     show_transcodes: false, show_transcode_icons: true, show_poster: true, poster_size: 100, show_avatar: true,
     show_progress: true, show_end_time: false, show_quality: true, show_device: true, show_server: true,
     show_bitrate: false, show_health: true, show_codecs: false, show_year: true, show_remaining: true,
-    show_paused: true, hide_empty: false, empty_mode: "message", empty_message: "Aucune lecture en cours",
+    show_paused: true, hide_empty: false, empty_mode: "message", empty_message: "Nothing playing",
     sort: "recent", filter_transcode: "all",
     show_header: true, header_show_streams: true, header_show_bandwidth: false,
     header_show_direct: false, header_show_paused: false,
@@ -58,8 +58,8 @@
     return {elapsed, remaining: Math.max(0, total - elapsed), total};
   };
   const formattedSeconds = seconds => fmtTime(seconds * 1000);
-  const timeOfDay = (epochMs) => new Intl.DateTimeFormat("fr-FR", {
-    hour: "2-digit", minute: "2-digit", hour12: false,
+  const timeOfDay = (epochMs) => new Intl.DateTimeFormat("en-US", {
+    hour: "numeric", minute: "2-digit",
   }).format(new Date(epochMs));
   const estimatedEnd = (clock, now, wallNow) => clock && clock.state === "playing" && clock.duration > 0
     ? timeOfDay(wallNow + Math.max(0, clock.duration - Math.min(clock.duration, now))) : "";
@@ -74,19 +74,19 @@
   const MOVIE_FIELDS = Object.freeze(["title", "year"]);
   const SERIES_FIELDS = Object.freeze(["series", "season", "episode_number", "episode", "year"]);
   const MEDIA_LABELS = Object.freeze({
-    title: "Titre du film", series: "Titre de la série", season: "Saison",
-    episode_number: "Numéro d’épisode", episode: "Nom de l’épisode", year: "Année",
+    title: "Movie title", series: "Series title", season: "Season",
+    episode_number: "Episode number", episode: "Episode name", year: "Year",
   });
   const FOOTER_FIELDS = Object.freeze(["health", "server", "device", "quality", "bitrate", "codecs"]);
   const FOOTER_LABELS = Object.freeze({
-    health:"État du serveur",server:"Nom du serveur",device:"Appareil / lecteur",
-    quality:"Résolution",bitrate:"Débit du flux",codecs:"Codecs",
+    health:"Server status",server:"Server name",device:"Device / player",
+    quality:"Resolution",bitrate:"Stream bitrate",codecs:"Codecs",
   });
   const HEADER_FIELDS = Object.freeze(["streams", "bandwidth", "direct", "paused", "video", "audio", "both", "transcodes_total", "server_counts"]);
   const HEADER_LABELS = Object.freeze({
-    streams:"Nombre de flux",bandwidth:"Débit total",direct:"Lectures directes",
-    paused:"Lectures en pause",video:"Transcode vidéo seul",audio:"Transcode audio seul",
-    both:"Transcode vidéo + audio",transcodes_total:"Total des transcodages",server_counts:"Flux par serveur",
+    streams:"Stream count",bandwidth:"Total bitrate",direct:"Direct plays",
+    paused:"Paused plays",video:"Video-only transcode",audio:"Audio-only transcode",
+    both:"Video and audio transcode",transcodes_total:"Total transcodes",server_counts:"Streams per server",
   });
   const HEADER_ICONS = Object.freeze({
     streams:"mdi:play-circle-outline",bandwidth:"mdi:speedometer",direct:"mdi:check-circle-outline",
@@ -193,6 +193,8 @@
     .metric.blink-positive { animation:tracearr-badge-pulse var(--badge-blink,2s) ease-in-out infinite; }
     @keyframes tracearr-badge-pulse { 0%,100% { opacity:1; } 50% { opacity:.22; } }
     .streams { display:flex; flex-direction:column; gap:10px; }
+    .streams.grid { display:grid; gap:10px;
+      grid-template-columns:repeat(auto-fit,minmax(min(100%,var(--min-column,290px)),1fr)); }
     .streams.carousel { overflow-x:auto; flex-direction:row; scroll-snap-type:x mandatory;
       scrollbar-width:none; -ms-overflow-style:none; scroll-behavior:auto; padding-bottom:0;
       overscroll-behavior-x:contain; cursor:grab; touch-action:pan-x pan-y; }
@@ -285,16 +287,18 @@
     .compact .user { font-size:calc(var(--tr-font-size)*.83); }
     .compact .info { gap:3px; }
     .compact .media-flags { top:8px; right:8px; }
-    @container (max-width:520px) { .carousel .stream { flex-basis:100%!important; } }
+    @container (max-width:520px) { .streams.grid { grid-template-columns:1fr!important; }
+      .carousel .stream { flex-basis:100%!important; } }
     @media (prefers-reduced-motion:reduce) { .fill { transition:none; } .metric.blink-positive { animation:none; } }
   `;
 
   function normalizeConfig(config) {
     const result = {...DEFAULTS, ...config};
-    // The old grid layout is replaced by the full-width list. Native Sections
-    // owns sizing; retired internal sizing controls are never persisted again.
-    if (!['list', 'carousel'].includes(result.mode)) result.mode = 'list';
-    for (const key of ['columns','grid_columns','grid_rows','height']) delete result[key];
+    // Sections owns card width and height. The stream grid is a layout again;
+    // retired pixel and row sizing controls are never persisted.
+    if (!['list', 'grid', 'carousel'].includes(result.mode)) result.mode = 'list';
+    if (!['auto', '1', '2', '3', '4'].includes(String(result.columns))) result.columns = 'auto';
+    for (const key of ['grid_columns', 'grid_rows', 'height']) delete result[key];
     // Pre-0.1.4 dashboards continue to behave the same until users change them.
     if (!("header_show_streams" in config)) result.header_show_streams = config.show_counter ?? true;
     if (config.show_transcodes && !["header_show_video","header_show_audio","header_show_both","header_show_transcodes_total"].some(k => k in config)) {
@@ -554,7 +558,7 @@
           card.querySelector(".user .avatar");
         if (target && !(target.tagName === "IMG" && target.getAttribute("src") === url)) {
           const css = kind === "poster" ? "poster" : "avatar";
-          const alt = kind === "poster" ? "Affiche" : "";
+          const alt = kind === "poster" ? "Poster" : "";
           target.outerHTML = `<img class="${css}" data-kind="${kind}" src="${E(url)}" alt="${alt}" loading="eager" decoding="async">`;
         }
         // Signed artwork may arrive after the backdrop was initially rendered.
@@ -684,9 +688,9 @@
       const fields = {
         series: c.series_show_title && stream.show_title ? stream.show_title : "",
         season: c.series_show_season && season != null ?
-          (long ? `Saison ${season}` : `S${String(season).padStart(2,"0")}`) : "",
+          (long ? `Season ${season}` : `S${String(season).padStart(2,"0")}`) : "",
         episode_number: c.series_show_episode_number && episodeNum != null ?
-          (long ? `Épisode ${episodeNum}` : `E${String(episodeNum).padStart(2,"0")}`) : "",
+          (long ? `Episode ${episodeNum}` : `E${String(episodeNum).padStart(2,"0")}`) : "",
         episode: c.series_show_episode_title && stream.media_title ? stream.media_title : "",
         year: c.series_show_year && stream.year != null ? String(stream.year) : "",
       };
@@ -751,7 +755,7 @@
         if (s.state === "paused") sums.paused++;
         if (this._includeBitrate(s)) sums.bandwidth += Math.max(0, Number(s.bitrate) || 0);
         const id = s.server_id || `${s.server_type}:${s.server_name}`;
-        const row = sums.byServer.get(id) || {name:s.server_name || s.server_type || "Serveur",type:s.server_type,count:0};
+        const row = sums.byServer.get(id) || {name:s.server_name || s.server_type || "Server",type:s.server_type,count:0};
         row.count++;
         sums.byServer.set(id,row);
       }
@@ -787,20 +791,21 @@
         const align = position === "auto" ? (c.show_title ? "right" : "left") : position;
         metrics.set(key, [...(metrics.get(key) || []), {align,markup}]);
       };
-      // Preserve the existing stream-count format "2 flux" when names are on.
+      // Keep a readable count such as "2 streams" when the name is shown.
       const streamSettings = c.header_metric_settings?.streams;
       const streamLabel = String(streamSettings?.label || "").trim();
       const showStreamName = streamSettings?.show_name ?? c.header_show_names;
+      const streamCount = summary.total === 1 ? "1 stream" : `${summary.total} streams`;
       add("streams", c.header_show_streams, streamLabel,
-        streamLabel ? String(summary.total) : (showStreamName ? `${summary.total} flux` : String(summary.total)), summary.total);
-      const bandwidthTitle = c.bitrate_scope === "local" ? "Débit local" :
-        c.bitrate_scope === "remote" ? "Débit distant" : "Débit";
+        streamLabel ? String(summary.total) : (showStreamName ? streamCount : String(summary.total)), summary.total);
+      const bandwidthTitle = c.bitrate_scope === "local" ? "Local bitrate" :
+        c.bitrate_scope === "remote" ? "Remote bitrate" : "Bitrate";
       add("bandwidth", c.header_show_bandwidth, bandwidthTitle, `${(summary.bandwidth/1000).toFixed(1)} Mb/s`, summary.bandwidth);
       add("direct", c.header_show_direct, "Direct", summary.direct, summary.direct);
-      add("paused", c.header_show_paused, "Pause", summary.paused, summary.paused);
-      add("video", c.header_show_video, "Vidéo", summary.video, summary.video);
+      add("paused", c.header_show_paused, "Paused", summary.paused, summary.paused);
+      add("video", c.header_show_video, "Video", summary.video, summary.video);
       add("audio", c.header_show_audio, "Audio", summary.audio, summary.audio);
-      add("both", c.header_show_both, "Vidéo + audio", summary.both, summary.both);
+      add("both", c.header_show_both, "Video + audio", summary.both, summary.both);
       add("transcodes_total", c.header_show_transcodes_total, "Transcodes", summary.transcodes, summary.transcodes);
       if (c.header_show_server_counts) {
         for (const server of summary.byServer.values()) add("server_counts",true,server.name,server.count,server.count,server.type);
@@ -811,7 +816,7 @@
         if (!/^[a-z_]+\.[a-z0-9_]+$/.test(id)) continue;
         const state = this._hass?.states?.[id];
         const name = String(row.label || state?.attributes?.friendly_name || id);
-        const value = state?.state == null ? "Indisponible" : String(state.state);
+        const value = state?.state == null ? "Unavailable" : String(state.state);
         const unit = state?.attributes?.unit_of_measurement;
         const units = unit && !["unknown", "unavailable"].includes(value) ? ` ${unit}` : "";
         const domain = id.split(".")[0];
@@ -819,7 +824,7 @@
           input_number:"mdi:numeric", number:"mdi:numeric", light:"mdi:lightbulb", switch:"mdi:toggle-switch"})[domain] || "mdi:information-outline";
         add(`entity:${row.id}`, true, name, `${value}${units}`, value, null, {...row,icon:state?.attributes?.icon || fallback});
       }
-      const title = c.show_title ? `<h3>${E(c.title || "Lectures en cours")}</h3>` : "";
+      const title = c.show_title ? `<h3>${E(c.title || "Now playing")}</h3>` : "";
       const order = normalizedOrder(c.header_badge_order,
         [...HEADER_FIELDS, ...(c.header_entity_badges || []).map(row => `entity:${row.id}`)]);
       const orderedMetrics = order.flatMap(key => metrics.get(key) || []);
@@ -903,10 +908,10 @@
       const ratio = clock.duration > 0 ? 100 * Math.min(1, displayPosition / clock.duration) : 0;
       const timePair = playbackSeconds(displayPosition, clock.duration);
       const endLabel = c.show_end_time && clock.state === "playing" && clock.duration > 0 ?
-        `<span class="time-end" data-id="${E(s.id)}">Fin à ${E(estimatedEnd(clock,displayPosition,Date.now()))}</span>` : "";
+        `<span class="time-end" data-id="${E(s.id)}">Ends at ${E(estimatedEnd(clock,displayPosition,Date.now()))}</span>` : "";
       const paused = s.state === "paused";
       const metaByKey = {};
-      if (c.show_health && entry?.servers?.find(server => server.server_id === s.server_id)?.status === "down") metaByKey.health = (`<span class="chip warn">Serveur hors ligne</span>`);
+      if (c.show_health && entry?.servers?.find(server => server.server_id === s.server_id)?.status === "down") metaByKey.health = (`<span class="chip warn">Server offline</span>`);
       if (c.show_server) metaByKey.server = `<span>${E(s.server_name || s.server_type || "")}</span>`;
       if (c.show_device && (s.device || s.player)) metaByKey.device = `<span>${E(s.device || s.player)}</span>`;
       if (c.show_quality && s.resolution) metaByKey.quality = `<span class="chip">${E(s.resolution)}</span>`;
@@ -923,13 +928,13 @@
       const backdropMarkup = blurred ? `<div class="stream-backdrop" aria-hidden="true">${poster ?
         `<img class="backdrop-image"${c.show_poster ? "" : ' data-kind="poster"'} src="${E(poster)}" alt="" decoding="async">` :
         '<div class="backdrop-empty"></div>'}</div>` : "";
-      const indicators = c.show_transcode_icons ? `<div class="media-flags" aria-label="État du flux audio et vidéo">${["video","audio"].map(kind => {
+      const indicators = c.show_transcode_icons ? `<div class="media-flags" aria-label="Video and audio stream status">${["video","audio"].map(kind => {
         const decision = kind === "video" ? s.video_decision : s.audio_decision;
         const state = codecState(decision);
-        const tip = `${kind === "video" ? "Vidéo" : "Audio"} : ${state === "transcode" ? "Transcodage" : state === "direct" ? "Lecture directe" : "Inconnu"}`;
+        const tip = `${kind === "video" ? "Video" : "Audio"}: ${state === "transcode" ? "Transcode" : state === "direct" ? "Direct play" : "Unknown"}`;
         return `<span class="stream-indicator ${state}" role="img" aria-label="${E(tip)}" title="${E(tip)}">${badgeIcon(kind)}</span>`;
       }).join("")}</div>` : "";
-      const posterMarkup = c.show_poster ? `<div class="poster-wrap">${poster ? `<img class="poster" data-kind="poster" src="${E(poster)}" alt="Affiche" loading="eager" decoding="async">` : `<div class="poster empty">▣</div>`}${paused ? `<span class="poster-paused" aria-label="Lecture en pause"><span class="pause-symbol" aria-hidden="true"></span></span>` : ""}</div>` : "";
+      const posterMarkup = c.show_poster ? `<div class="poster-wrap">${poster ? `<img class="poster" data-kind="poster" src="${E(poster)}" alt="Poster" loading="eager" decoding="async">` : `<div class="poster empty">▣</div>`}${paused ? `<span class="poster-paused" aria-label="Paused playback"><span class="pause-symbol" aria-hidden="true"></span></span>` : ""}</div>` : "";
       return `<article class="stream accent-${edgeMode}${blurred ? " surface-blur" : ""}" data-session="${E(s.id)}" style="--stream-accent:${accent};${sharedStyle}">
         ${backdropMarkup}
         ${posterMarkup}
@@ -938,7 +943,7 @@
           ${c.show_avatar ? `<div class="user">${avatar ? `<img class="avatar" data-kind="avatar" src="${E(avatar)}" alt="" loading="eager" decoding="async">` : `<span class="avatar fallback-avatar">${E(name.slice(0,1).toUpperCase())}</span>`}<span>${E(name)}</span></div>` : `<div class="user">${E(name)}</div>`}
           ${mediaMarkup}
           ${c.show_progress ? `<div class="progress"><span class="fill" data-id="${E(s.id)}" style="width:${ratio.toFixed(2)}%"></span></div>` : ""}
-          ${c.show_progress || c.show_end_time ? `<div class="times"><span class="time-left"><span class="time-current" data-id="${E(s.id)}">${formattedSeconds(timePair.elapsed)}</span>${paused ? `<span class="time-separator">/</span><span class="time-paused">En pause</span>` : c.show_remaining && c.show_progress ? `<span class="time-separator">/</span><span class="time-remaining" data-id="${E(s.id)}">-${formattedSeconds(timePair.remaining)}</span>` : ""}</span>${endLabel}</div>` : ""}
+          ${c.show_progress || c.show_end_time ? `<div class="times"><span class="time-left"><span class="time-current" data-id="${E(s.id)}">${formattedSeconds(timePair.elapsed)}</span>${paused ? `<span class="time-separator">/</span><span class="time-paused">Paused</span>` : c.show_remaining && c.show_progress ? `<span class="time-separator">/</span><span class="time-remaining" data-id="${E(s.id)}">-${formattedSeconds(timePair.remaining)}</span>` : ""}</span>${endLabel}</div>` : ""}
           ${meta.length ? `<div class="meta">${meta.join("<span aria-hidden=\"true\">·</span>")}</div>` : ""}
         </div>
       </article>`;
@@ -969,7 +974,7 @@
         const endNode = this.shadowRoot.querySelector(`.time-end[data-id="${selectorId}"]`);
         if (endNode) {
           const end = estimatedEnd(item,item.lastRendered,wallNow);
-          const label = end ? `Fin à ${end}` : "";
+          const label = end ? `Ends at ${end}` : "";
           if (endNode.textContent !== label) endNode.textContent = label;
         }
       });
@@ -1176,6 +1181,10 @@
       const head = this._header(streams);
       this._headerMarkup = head;
       this._liveFingerprints = new Map(streams.map(s => [s.id, this._liveSnapshot(s,entry)]));
+      const columnCount = Math.max(1, Math.min(4, Number(c.columns) || 1));
+      const cols = String(c.columns) === "auto"
+        ? "repeat(auto-fit,minmax(min(100%,var(--min-column,290px)),1fr))"
+        : `repeat(${columnCount},minmax(0,1fr))`;
       const visible = clamp(c.carousel_visible, 1, 4, 1);
       const posterScale = clamp(c.poster_size, 50, 200, 100) / 100;
       const posterVars = `--tr-poster-width:${Math.round(73 * posterScale)}px;--tr-poster-height:${Math.round(109 * posterScale)}px;--tr-compact-poster-width:${Math.round(48 * posterScale)}px;--tr-compact-poster-height:${Math.round(72 * posterScale)}px`;
@@ -1183,11 +1192,13 @@
       // Always conceal the native scrollbar; navigation remains via buttons,
       // touch swipe, optional mouse drag and keyboard arrow keys.
       const classes = `streams ${E(c.mode)}`;
-      const emptyText = entry && !entry.connected ? "Tracearr indisponible" : String(c.empty_message ?? "Aucune lecture en cours");
+      const emptyText = entry && !entry.connected ? "Tracearr unavailable" : String(c.empty_message ?? "Nothing playing");
+      const gridStyle = c.mode === "grid" ? `grid-template-columns:${E(cols)};` : "";
       const body = !streams.length && c.empty_mode === "header_only" ? "" :
-        `<div class="${classes}" ${c.mode === "carousel" ? `tabindex="0" role="region" aria-label="Lectures en carrousel"` : ""} style="--carousel-visible:${visible}">${items || `<div class="empty-message">${E(emptyText)}</div>`}</div>`;
-      const nav = c.mode === "carousel" && c.carousel_show_arrows && streams.length > 1 ? `<div class="carousel-nav"><button class="nav" data-step="-1" aria-label="Précédent">❮</button><span>${streams.length} lectures</span><button class="nav" data-step="1" aria-label="Suivant">❯</button></div>` : "";
-      this.shadowRoot.innerHTML = `<style>${style}</style><ha-card style="--tr-font-size:${clamp(c.font_size,10,28,14)}px;${posterVars}"><div class="root ${c.compact?"compact":""} ${c.stream_surface === "transparent" ? "flat-streams" : ""}">${head}${body}${nav}</div></ha-card>`;
+        `<div class="${classes}" ${c.mode === "carousel" ? `tabindex="0" role="region" aria-label="Streams carousel"` : ""} style="${gridStyle}--carousel-visible:${visible}">${items || `<div class="empty-message">${E(emptyText)}</div>`}</div>`;
+      const streamWord = streams.length === 1 ? "stream" : "streams";
+      const nav = c.mode === "carousel" && c.carousel_show_arrows && streams.length > 1 ? `<div class="carousel-nav"><button class="nav" data-step="-1" aria-label="Previous">❮</button><span>${streams.length} ${streamWord}</span><button class="nav" data-step="1" aria-label="Next">❯</button></div>` : "";
+      this.shadowRoot.innerHTML = `<style>${style}</style><ha-card style="--tr-font-size:${clamp(c.font_size,10,28,14)}px;${posterVars}"><div class="root ${c.compact?"compact":""} ${c.stream_surface === "transparent" ? "flat-streams" : ""}" style="--min-column:${c.compact?"210px":"290px"}">${head}${body}${nav}</div></ha-card>`;
       const newCarousel = this.shadowRoot.querySelector(".streams.carousel");
       if (newCarousel) {
         const cards = [...newCarousel.querySelectorAll(".stream")];
@@ -1305,14 +1316,14 @@
       const order = normalizedOrder(this._config[configKey], fields);
       return `<div class="order-list">${order.map((field,index) => {
         const label = labels[field] || field;
-        return `<div class="order-row"><span>${E(label)}</span><div class="move-controls"><button type="button" data-order="${E(configKey)}" data-index="${index}" data-direction="-1" ${index===0?"disabled":""} aria-label="Monter ${E(label)}">↑</button><button type="button" data-order="${E(configKey)}" data-index="${index}" data-direction="1" ${index===order.length-1?"disabled":""} aria-label="Descendre ${E(label)}">↓</button></div></div>`;
+        return `<div class="order-row"><span>${E(label)}</span><div class="move-controls"><button type="button" data-order="${E(configKey)}" data-index="${index}" data-direction="-1" ${index===0?"disabled":""} aria-label="Move ${E(label)} up">↑</button><button type="button" data-order="${E(configKey)}" data-index="${index}" data-direction="1" ${index===order.length-1?"disabled":""} aria-label="Move ${E(label)} down">↓</button></div></div>`;
       }).join("")}</div>`;
     }
     _headerOrderEditor() {
       const custom = this._config.header_entity_badges || [];
       const options = [...HEADER_FIELDS, ...custom.map(row => `entity:${row.id}`)];
       const labels = {...HEADER_LABELS};
-      custom.forEach(row => { labels[`entity:${row.id}`] = `Entité : ${row.label || row.entity || "Sans nom"}`; });
+      custom.forEach(row => { labels[`entity:${row.id}`] = `Entity: ${row.label || row.entity || "Unnamed"}`; });
       return this._orderEditor("header_badge_order", options, labels);
     }
     _emit() {
@@ -1320,55 +1331,55 @@
     }
     _alignmentSelect(current,attr) {
       const align = badgeAlign(current);
-      return `<label>Alignement<select ${attr}>
-        <option value="auto" ${align==="auto"?"selected":""}>Automatique (selon le titre)</option>
-        <option value="left" ${align==="left"?"selected":""}>Gauche</option>
-        <option value="center" ${align==="center"?"selected":""}>Centre</option>
-        <option value="right" ${align==="right"?"selected":""}>Droite</option>
+      return `<label>Alignment<select ${attr}>
+        <option value="auto" ${align==="auto"?"selected":""}>Automatic (follows the title)</option>
+        <option value="left" ${align==="left"?"selected":""}>Left</option>
+        <option value="center" ${align==="center"?"selected":""}>Center</option>
+        <option value="right" ${align==="right"?"selected":""}>Right</option>
       </select></label>`;
     }
     _metricBadgeEditor() {
       const rows = this._config.header_metric_settings || {};
       const checks = this._checks(HEADER_FIELDS.map(key => [`header_show_${key}`, HEADER_LABELS[key]]));
-      return checks + `<small>Ouvrez une statistique pour régler son alignement et son apparence individuellement. Les options non modifiées suivent le style global.</small>` +
+      return checks + `<small>Open a statistic to set its alignment and appearance. Unchanged options follow the shared style.</small>` +
         HEADER_FIELDS.map(key => {
           const item = rows[key] || {};
           const content = this._alignmentSelect(item.align,`data-metric-setting="align" data-metric-key="${E(key)}"`) +
-            `<label>Nom personnalisé (facultatif)<input type="text" data-metric-setting="label" data-metric-key="${E(key)}" value="${E(item.label || "")}" placeholder="${E(HEADER_LABELS[key])}"></label>`+
+            `<label>Custom name (optional)<input type="text" data-metric-setting="label" data-metric-key="${E(key)}" value="${E(item.label || "")}" placeholder="${E(HEADER_LABELS[key])}"></label>`+
             `<div class="columns">` +
-              `<label class="check"><input type="checkbox" data-metric-setting="show_name" data-metric-key="${E(key)}" ${(item.show_name ?? this._config.header_show_names) ? "checked" : ""}>Afficher le nom</label>`+
-              `<label class="check"><input type="checkbox" data-metric-setting="show_icon" data-metric-key="${E(key)}" ${item.show_icon ? "checked" : ""}>Afficher l'icône</label>`+
-              `<label class="check"><input type="checkbox" data-metric-setting="only_positive" data-metric-key="${E(key)}" ${item.only_positive ? "checked" : ""}>Afficher si supérieur à 0</label>`+
-              `<label class="check"><input type="checkbox" data-metric-setting="blink_positive" data-metric-key="${E(key)}" ${item.blink_positive ? "checked" : ""}>Clignoter si supérieur à 0</label>`+
+              `<label class="check"><input type="checkbox" data-metric-setting="show_name" data-metric-key="${E(key)}" ${(item.show_name ?? this._config.header_show_names) ? "checked" : ""}>Show name</label>`+
+              `<label class="check"><input type="checkbox" data-metric-setting="show_icon" data-metric-key="${E(key)}" ${item.show_icon ? "checked" : ""}>Show icon</label>`+
+              `<label class="check"><input type="checkbox" data-metric-setting="only_positive" data-metric-key="${E(key)}" ${item.only_positive ? "checked" : ""}>Show only above 0</label>`+
+              `<label class="check"><input type="checkbox" data-metric-setting="blink_positive" data-metric-key="${E(key)}" ${item.blink_positive ? "checked" : ""}>Blink when above 0</label>`+
             `</div>`+
-            `<label>Icône MDI (facultatif)<input type="text" data-metric-setting="icon" data-metric-key="${E(key)}" value="${E(item.icon || "")}" placeholder="${E(HEADER_ICONS[key])}"></label>`+
-            `<label>Durée d'un clignotement (secondes)<input type="number" min="0.5" max="20" step="0.5" data-metric-setting="blink_seconds" data-metric-key="${E(key)}" value="${E(item.blink_seconds ?? this._config.header_blink_seconds)}"></label>`+
-            `<label>Couleur si valeur à zéro<select data-metric-setting="zero_color_mode" data-metric-key="${E(key)}"><option value="inherit" ${item.zero_color_mode!=="custom"?"selected":""}>Réglage global</option><option value="custom" ${item.zero_color_mode==="custom"?"selected":""}>Couleur particulière</option></select></label>`+
-            `<label>Couleur personnalisée à zéro<input type="color" data-metric-setting="zero_custom_color" data-metric-key="${E(key)}" value="${E(validColor(item.zero_custom_color || "#576574"))}"></label>`;
+            `<label>MDI icon (optional)<input type="text" data-metric-setting="icon" data-metric-key="${E(key)}" value="${E(item.icon || "")}" placeholder="${E(HEADER_ICONS[key])}"></label>`+
+            `<label>Blink duration (seconds)<input type="number" min="0.5" max="20" step="0.5" data-metric-setting="blink_seconds" data-metric-key="${E(key)}" value="${E(item.blink_seconds ?? this._config.header_blink_seconds)}"></label>`+
+            `<label>Color at zero<select data-metric-setting="zero_color_mode" data-metric-key="${E(key)}"><option value="inherit" ${item.zero_color_mode!=="custom"?"selected":""}>Shared setting</option><option value="custom" ${item.zero_color_mode==="custom"?"selected":""}>Custom color</option></select></label>`+
+            `<label>Custom zero color<input type="color" data-metric-setting="zero_custom_color" data-metric-key="${E(key)}" value="${E(validColor(item.zero_custom_color || "#576574"))}"></label>`;
           return this._subgroup(`metric-${key}`, HEADER_LABELS[key], content);
         }).join("");
     }
     _entityBadgeEditor() {
       const rows = this._config.header_entity_badges || [];
-      return `<small>Ajoutez une entité, puis ouvrez sa fiche pour modifier ses options.</small>`+
+      return `<small>Add an entity, then open it to change its options.</small>`+
         rows.map((row,index) => this._subgroup(`entity-${row.id}`,
-          `${row.label || row.entity || 'Nouveau badge'}${row.entity ? ' · '+row.entity : ''}`,
+          `${row.label || row.entity || 'New badge'}${row.entity ? ' · '+row.entity : ''}`,
           `<div class="badge-row" data-badge-row="${index}">`+
-          `<label>Entité<ha-entity-picker data-badge-index="${index}" aria-label="Choisir une entité"></ha-entity-picker></label>`+
-          `<label>Nom facultatif<input type="text" data-badge-label="${index}" placeholder="Nom de l'entité" value="${E(row.label || "")}"></label>`+
+          `<label>Entity<ha-entity-picker data-badge-index="${index}" aria-label="Choose an entity"></ha-entity-picker></label>`+
+          `<label>Optional name<input type="text" data-badge-label="${index}" placeholder="Entity name" value="${E(row.label || "")}"></label>`+
           this._alignmentSelect(row.align,`data-badge-setting="align" data-badge-index="${index}"`)+
           `<div class="columns">`+
-            `<label class="check"><input type="checkbox" data-badge-setting="show_name" data-badge-index="${index}" ${(row.show_name ?? this._config.header_show_names) ? "checked" : ""}>Afficher le nom</label>`+
-            `<label class="check"><input type="checkbox" data-badge-setting="show_icon" data-badge-index="${index}" ${row.show_icon ? "checked" : ""}>Icône de l'entité</label>`+
-            `<label class="check"><input type="checkbox" data-badge-setting="only_positive" data-badge-index="${index}" ${row.only_positive ? "checked" : ""}>Afficher si supérieur à 0</label>`+
-            `<label class="check"><input type="checkbox" data-badge-setting="blink_positive" data-badge-index="${index}" ${row.blink_positive ? "checked" : ""}>Clignoter si supérieur à 0</label>`+
+            `<label class="check"><input type="checkbox" data-badge-setting="show_name" data-badge-index="${index}" ${(row.show_name ?? this._config.header_show_names) ? "checked" : ""}>Show name</label>`+
+            `<label class="check"><input type="checkbox" data-badge-setting="show_icon" data-badge-index="${index}" ${row.show_icon ? "checked" : ""}>Entity icon</label>`+
+            `<label class="check"><input type="checkbox" data-badge-setting="only_positive" data-badge-index="${index}" ${row.only_positive ? "checked" : ""}>Show only above 0</label>`+
+            `<label class="check"><input type="checkbox" data-badge-setting="blink_positive" data-badge-index="${index}" ${row.blink_positive ? "checked" : ""}>Blink when above 0</label>`+
           `</div>`+
-          `<label>Durée d'un clignotement (secondes)<input type="number" min="0.5" max="20" step="0.5" data-badge-setting="blink_seconds" data-badge-index="${index}" value="${E(row.blink_seconds ?? this._config.header_blink_seconds)}"></label>`+
-          `<label>Couleur si valeur à zéro<select data-badge-setting="zero_color_mode" data-badge-index="${index}"><option value="inherit" ${row.zero_color_mode !== "custom" ? "selected" : ""}>Réglage global</option><option value="custom" ${row.zero_color_mode === "custom" ? "selected" : ""}>Couleur particulière</option></select></label>`+
-          `<label>Couleur personnalisée à zéro<input type="color" data-badge-setting="zero_custom_color" data-badge-index="${index}" value="${E(validColor(row.zero_custom_color || "#576574"))}"></label>`+
-          `<button class="remove-badge" type="button" data-badge-remove="${index}" aria-label="Supprimer le badge">Supprimer</button>`+
+          `<label>Blink duration (seconds)<input type="number" min="0.5" max="20" step="0.5" data-badge-setting="blink_seconds" data-badge-index="${index}" value="${E(row.blink_seconds ?? this._config.header_blink_seconds)}"></label>`+
+          `<label>Color at zero<select data-badge-setting="zero_color_mode" data-badge-index="${index}"><option value="inherit" ${row.zero_color_mode !== "custom" ? "selected" : ""}>Shared setting</option><option value="custom" ${row.zero_color_mode === "custom" ? "selected" : ""}>Custom color</option></select></label>`+
+          `<label>Custom zero color<input type="color" data-badge-setting="zero_custom_color" data-badge-index="${index}" value="${E(validColor(row.zero_custom_color || "#576574"))}"></label>`+
+          `<button class="remove-badge" type="button" data-badge-remove="${index}" aria-label="Remove badge">Remove</button>`+
           `</div>`)).join("")+
-        `<button type="button" class="add-badge" data-badge-add ${rows.length>=20?"disabled":""}>+ Ajouter un badge</button>`;
+        `<button type="button" class="add-badge" data-badge-add ${rows.length>=20?"disabled":""}>+ Add a badge</button>`;
     }
     render() {
       const c=this._config;
@@ -1384,108 +1395,109 @@
       // Keep stored targets selectable even after the session has ended.
       const withSaved=(choices,value,label)=>value && !choices.some(([id])=>String(id)===String(value))
         ? [...choices,[value,label]] : choices;
-      const source=this._select("entry_id","Instance Tracearr",[["","Automatique (première instance)"],...entries.map(e=>[e.id,e.name])])+
+      const source=this._select("entry_id","Tracearr instance",[["","Automatic (first instance)"],...entries.map(e=>[e.id,e.name])])+
         (isIndividual ?
-          this._select("selection","Quelle lecture afficher ?",[
-            ["recent","Dernière lecture active"],["account","Lecture d'un utilisateur"],
-            ["server","Lecture d'un serveur"],["stream","Session en cours précise"]])+
-          this._select("selected_account","Utilisateur (continue sur ses prochains films)",[["","Choisir un utilisateur"],
-            ...withSaved(accounts,c.selected_account,"Utilisateur précédemment choisi")])+
-          this._select("selected_server","Serveur",[["","Choisir un serveur"],
-            ...withSaved(servers,c.selected_server,"Serveur précédemment choisi")])+
-          this._select("stream_id","Session active (disparaît quand elle se termine)",[["","Choisir une lecture"],
-            ...withSaved(sessionChoices,c.stream_id,"Session précédemment choisie (terminée)")])+
-          `<small>Choisis une cible ci-dessus ; seuls les champs du mode sélectionné sont utilisés. Pour une carte permanente, privilégie un utilisateur plutôt qu'un ID de session temporaire.</small>`
+          this._select("selection","Which stream to show",[
+            ["recent","Latest active stream"],["account","A user's stream"],
+            ["server","A server's stream"],["stream","One active session"]])+
+          this._select("selected_account","User (keeps following their next plays)",[["","Choose a user"],
+            ...withSaved(accounts,c.selected_account,"Previously chosen user")])+
+          this._select("selected_server","Server",[["","Choose a server"],
+            ...withSaved(servers,c.selected_server,"Previously chosen server")])+
+          this._select("stream_id","Active session (disappears when it ends)",[["","Choose a stream"],
+            ...withSaved(sessionChoices,c.stream_id,"Previously chosen session (ended)")])+
+          `<small>Pick a target above. Only the fields for the selected mode are used. For a card that stays on the dashboard, choose a user instead of a temporary session ID.</small>`
         : "")+
-        this._select("filter_server","Filtrer par serveur",[["","Tous les serveurs"],...servers])+
-        this._select("filter_user","Filtrer par utilisateur",[["","Tous les utilisateurs"],...users.map(u=>[u,u])])+
-        this._select("filter_transcode","Mode de lecture",[["all","Tous"],["direct","Direct"],["video","Vidéo seule"],["audio","Audio seul"],["both","Vidéo et audio"],["unknown","Inconnu"]])+
-        this._select("sort","Ordre des flux",[["recent","Plus récent d'abord"],["user","Utilisateur"],["server","Serveur"]]);
+        this._select("filter_server","Filter by server",[["","All servers"],...servers])+
+        this._select("filter_user","Filter by user",[["","All users"],...users.map(u=>[u,u])])+
+        this._select("filter_transcode","Playback mode",[["all","All"],["direct","Direct"],["video","Video only"],["audio","Audio only"],["both","Video and audio"],["unknown","Unknown"]])+
+        this._select("sort","Stream order",[["recent","Newest first"],["user","User"],["server","Server"]]);
       // Keep the visibility switches, and expose optional per-metric settings below.
       const headerMetrics=this._metricBadgeEditor();
       const headerCommon=this._checks([
-        ["header_show_names","Afficher les noms des statistiques"],
-        ["header_positive_only","Masquer les badges à zéro"],
-        ["header_blink_positive","Clignoter si la valeur est positive"],
+        ["header_show_names","Show statistic names"],
+        ["header_positive_only","Hide badges at zero"],
+        ["header_blink_positive","Blink when the value is above zero"],
       ])+
-        this._number("header_blink_seconds","Période de clignotement (secondes)",0.5,20)+
-        this._select("header_badge_color_mode","Couleur des badges",[["inherit","Palette globale"],["theme","Thème Home Assistant"],["server","Couleur du serveur"],["custom","Personnalisée"]])+
-        `<label>Couleur personnalisée<input type="color" data-field="header_badge_custom_color" value="${E(validColor(c.header_badge_custom_color))}"></label>`+
-        this._select("header_zero_color_mode","Couleur à zéro",[["normal","Palette normale"],["custom","Personnalisée"]])+
-        `<label>Couleur personnalisée à zéro<input type="color" data-field="header_zero_custom_color" value="${E(validColor(c.header_zero_custom_color))}"></label>`;
-      const header=this._toggle("show_header","Afficher l'en-tête")+
-        `<label>Titre<input type="text" data-field="title" placeholder="Lectures en cours" value="${E(c.title||"")}"></label>`+
-        this._toggle("show_title","Afficher le titre")+
-        this._subgroup("metrics","Statistiques Tracearr",headerMetrics)+
-        this._subgroup("entities","Badges d'entités Home Assistant",this._entityBadgeEditor())+
-        this._subgroup("shared-badges","Style et comportement communs aux badges",headerCommon)+
-        this._subgroup("badge-order","Ordre des badges",this._headerOrderEditor());
+        this._number("header_blink_seconds","Blink period (seconds)",0.5,20)+
+        this._select("header_badge_color_mode","Badge color",[["inherit","Shared palette"],["theme","Home Assistant theme"],["server","Server color"],["custom","Custom"]])+
+        `<label>Custom color<input type="color" data-field="header_badge_custom_color" value="${E(validColor(c.header_badge_custom_color))}"></label>`+
+        this._select("header_zero_color_mode","Color at zero",[["normal","Normal palette"],["custom","Custom"]])+
+        `<label>Custom zero color<input type="color" data-field="header_zero_custom_color" value="${E(validColor(c.header_zero_custom_color))}"></label>`;
+      const header=this._toggle("show_header","Show header")+
+        `<label>Title<input type="text" data-field="title" placeholder="Now playing" value="${E(c.title||"")}"></label>`+
+        this._toggle("show_title","Show title")+
+        this._subgroup("metrics","Tracearr statistics",headerMetrics)+
+        this._subgroup("entities","Home Assistant entity badges",this._entityBadgeEditor())+
+        this._subgroup("shared-badges","Shared badge style",headerCommon)+
+        this._subgroup("badge-order","Badge order",this._headerOrderEditor());
 
       const carousel=this._checks([
-          ["carousel_autoplay","Défilement automatique"],["carousel_show_arrows","Flèches de navigation"],
-          ["carousel_mouse_drag","Glissement à la souris"],["carousel_pause_on_hover","Pause au survol"],
+          ["carousel_autoplay","Autoplay"],["carousel_show_arrows","Navigation arrows"],
+          ["carousel_mouse_drag","Mouse drag"],["carousel_pause_on_hover","Pause on hover"],
         ])+
-        `<div class="columns">${this._number("carousel_visible","Nombre de flux visibles",1,4)}${this._number("carousel_interval","Intervalle (secondes)",3,120)}</div>`+
-        this._select("carousel_transition","Transition",[["slide","Glissement"],["fade","Fondu"],["zoom","Zoom"],["flip","Retournement 3D"],["none","Sans animation"]])+
-        this._number("carousel_transition_speed","Durée de transition (ms)",100,3000)+
-        `<small>Barre horizontale masquée. Navigation tactile toujours disponible.</small>`;
-      const media = `<div class="group-label">Films</div>`+
-        this._checks([["movie_show_title","Afficher le titre"],["movie_show_year","Afficher l'année"]])+
-        `<small>Ordre d'affichage (flèches pour déplacer les champs, même masqués) :</small>`+
+        `<div class="columns">${this._number("carousel_visible","Visible streams",1,4)}${this._number("carousel_interval","Interval (seconds)",3,120)}</div>`+
+        this._select("carousel_transition","Transition",[["slide","Slide"],["fade","Fade"],["zoom","Zoom"],["flip","3D flip"],["none","No animation"]])+
+        this._number("carousel_transition_speed","Transition duration (ms)",100,3000)+
+        `<small>The horizontal scrollbar stays hidden. Touch navigation is always available.</small>`;
+      const media = `<div class="group-label">Movies</div>`+
+        this._checks([["movie_show_title","Show title"],["movie_show_year","Show year"]])+
+        `<small>Display order (arrows move fields, including hidden ones):</small>`+
         this._orderEditor("movie_field_order",MOVIE_FIELDS)+
-        `<div class="group-label">Séries et épisodes</div>`+
-        this._checks([["series_show_title","Titre de la série"],["series_show_episode_title","Nom de l'épisode"],
-          ["series_show_season","Afficher la saison"],["series_show_episode_number","Afficher le numéro d'épisode"],
-          ["series_show_year","Année de la série"]])+
-        this._select("series_episode_style","Format de saison et épisode",[["short","S01E02"],["long","Saison 1 · Épisode 2"]])+
-        `<small>Ordre d'affichage de toutes les informations :</small>`+
+        `<div class="group-label">Series and episodes</div>`+
+        this._checks([["series_show_title","Series title"],["series_show_episode_title","Episode name"],
+          ["series_show_season","Show season"],["series_show_episode_number","Show episode number"],
+          ["series_show_year","Series year"]])+
+        this._select("series_episode_style","Season and episode format",[["short","S01E02"],["long","Season 1 · Episode 2"]])+
+        `<small>Order of every field:</small>`+
         this._orderEditor("series_field_order",SERIES_FIELDS)+
-        `<small>Les réglages d'année sont indépendants entre films et séries.</small>`;
+        `<small>Movie and series year settings are independent.</small>`;
       const footer=this._checks([
-        ["show_server","Nom du serveur"],["show_device","Appareil / lecteur"],
-        ["show_quality","Résolution"],["show_bitrate","Débit du flux"],
-        ["show_codecs","Codecs"],["show_health","État du serveur"],
-      ])+`<small>Ordre des informations du bandeau (champs masqués inclus) :</small>`+
+        ["show_server","Server name"],["show_device","Device / player"],
+        ["show_quality","Resolution"],["show_bitrate","Stream bitrate"],
+        ["show_codecs","Codecs"],["show_health","Server status"],
+      ])+`<small>Footer order (hidden fields included):</small>`+
         this._orderEditor("footer_field_order", FOOTER_FIELDS, FOOTER_LABELS)+
-        `<small>Les badges de résolution et de débit adoptent la palette globale avec une écriture blanche ou noire automatique.</small>`;
-      const network=this._select("bitrate_scope","Débits à afficher (sur les flux et dans l'en-tête)",[
-          ["both","Tous les débits"],["local","Flux locaux uniquement"],["remote","Flux distants uniquement"]])+
-        `<label>Exceptions pour cette carte (facultatif, priorité sur les réglages de l’intégration)<textarea data-field="network_locations" placeholder="plex:alice=remote&#10;device:Apple TV=local">${E(c.network_locations||"")}</textarea></label>`+
-        `<small>Les affectations globales se configurent dans Paramètres → Appareils et services → Tracearr HA → Configurer → Localisation des appareils. Ici, vous pouvez ajouter des exceptions : serveur:utilisateur=local/remote, device:Nom=local/remote, player:Nom=local/remote ou utilisateur=local/remote. Les flux sans correspondance restent inconnus et ne sont pas comptés en mode local/distant.</small>`;
+        `<small>Resolution and bitrate badges use the shared palette, with automatic black or white text.</small>`;
+      const network=this._select("bitrate_scope","Bitrate to show (on streams and in the header)",[
+          ["both","All bitrates"],["local","Local streams only"],["remote","Remote streams only"]])+
+        `<label>Exceptions for this card (optional, they override the integration)<textarea data-field="network_locations" placeholder="plex:alice=remote&#10;device:Apple TV=local">${E(c.network_locations||"")}</textarea></label>`+
+        `<small>Set the shared device locations in Settings → Devices & services → Tracearr HA → Configure → Device locations. Here you can add exceptions: server:user=local/remote, device:Name=local/remote, player:Name=local/remote, or user=local/remote. Unmatched streams stay unknown and are not counted in local or remote mode.</small>`;
       const globalDisplay=(isIndividual ? "" :
-        this._select("mode","Disposition",[["list","Liste verticale"],["carousel","Carrousel"]]))+
+        this._select("mode","Layout",[["list","Vertical list"],["grid","Adaptive grid"],["carousel","Carousel"]])+
+        this._select("columns","Grid columns",[["auto","Automatic"],["1","1"],["2","2"],["3","3"],["4","4"]]))+
         this._checks([
-        ["compact","Mode compact"],["show_paused","Inclure les lectures en pause"],
-        ["show_poster","Affiche"],["show_avatar","Avatar"],
-        ["show_progress","Progression"],["show_remaining","Temps restant et pause"],
-        ["show_end_time","Fin de lecture estimée"],["show_transcode_icons","Icônes vidéo/audio"],
+        ["compact","Compact mode"],["show_paused","Include paused streams"],
+        ["show_poster","Poster"],["show_avatar","Avatar"],
+        ["show_progress","Progress"],["show_remaining","Remaining time and pause"],
+        ["show_end_time","Estimated end time"],["show_transcode_icons","Video/audio icons"],
       ])+
-        this._select("stream_surface","Fond intérieur des lectures",[["soft","Légèrement contrasté"],["transparent","Transparent"],["blur","Affiche floutée (cinéma)"]])+
-        `<small>Le fond cinéma utilise l'affiche du média et reste sombre pour préserver la lisibilité. Sans affiche, le fond reste uni.</small>`+
-        this._range("stream_blur","Intensité du flou",0,50,"px")+
-        this._range("stream_overlay","Assombrissement du fond",25,95,"%")+
-        this._select("stream_accent_style","Style du liseré gauche",[["rounded","Arrondi (suit les coins)"],["straight","Trait droit (ancien style)"],["none","Masqué"]])+
-        this._range("stream_accent_width","Épaisseur du liseré",2,8,"px")+
-        this._number("font_size","Taille du texte (px)",10,28)+
-        this._number("poster_size","Taille de l\'affiche (%)",50,200)+
-        `<small>100 % correspond à la taille actuelle. Le réglage s\'applique aussi au mode compact.</small>`+
-        this._select("empty_mode","En l'absence de lecture",[["message","Message personnalisé"],["header_only","En-tête uniquement"],["hide","Masquer la carte"]])+
-        `<label>Message sans lecture<input type="text" data-field="empty_message" value="${E(c.empty_message??"Aucune lecture en cours")}"></label>`+
-        this._select("accent_color_mode","Palette globale des couleurs",[["theme","Thème Home Assistant"],["server","Couleur de Plex / Jellyfin / Emby"],["custom","Personnalisée"]])+
-        `<label>Couleur globale personnalisée<input type="color" data-field="accent_custom_color" value="${E(validColor(c.accent_custom_color))}"></label>`+
-        `<small>La hauteur et la largeur se règlent uniquement dans l'onglet Mise en page de Home Assistant. Les couleurs propres aux badges restent prioritaires sur la palette globale.</small>`;
-      const usersSection=`<label>Alias propres à cette carte<textarea data-field="aliases">${E(c.aliases||"")}</textarea></label>`+
-        `<label>Avatars propres à cette carte (URLs HTTPS)<textarea data-field="avatars">${E(c.avatars||"")}</textarea></label>`+
-        `<small>Pour modifier tous les utilisateurs, utilisez la liste dans Paramètres → Appareils et services → Tracearr HA → Configurer.</small>`;
+        this._select("stream_surface","Stream background",[["soft","Slightly contrasted"],["transparent","Transparent"],["blur","Blurred poster (cinema)"]])+
+        `<small>The cinema background uses the media poster and stays dark so the text remains readable. Without a poster, the background is a solid dark color.</small>`+
+        this._range("stream_blur","Blur strength",0,50,"px")+
+        this._range("stream_overlay","Background dimming",25,95,"%")+
+        this._select("stream_accent_style","Left accent",[["rounded","Rounded (follows the corners)"],["straight","Straight bar (previous style)"],["none","Hidden"]])+
+        this._range("stream_accent_width","Accent thickness",2,8,"px")+
+        this._number("font_size","Text size (px)",10,28)+
+        this._number("poster_size","Poster size (%)",50,200)+
+        `<small>100% is the standard size. This also applies in compact mode.</small>`+
+        this._select("empty_mode","When nothing is playing",[["message","Custom message"],["header_only","Header only"],["hide","Hide the card"]])+
+        `<label>Empty message<input type="text" data-field="empty_message" value="${E(c.empty_message??"Nothing playing")}"></label>`+
+        this._select("accent_color_mode","Shared color palette",[["theme","Home Assistant theme"],["server","Plex / Jellyfin / Emby color"],["custom","Custom"]])+
+        `<label>Custom shared color<input type="color" data-field="accent_custom_color" value="${E(validColor(c.accent_custom_color))}"></label>`+
+        `<small>Set the card height and width only in Home Assistant's Layout tab. Badge-specific colors override the shared palette.</small>`;
+      const usersSection=`<label>Aliases for this card<textarea data-field="aliases">${E(c.aliases||"")}</textarea></label>`+
+        `<label>Avatars for this card (HTTPS URLs)<textarea data-field="avatars">${E(c.avatars||"")}</textarea></label>`+
+        `<small>To edit every user, use the list in Settings → Devices & services → Tracearr HA → Configure.</small>`;
       this.shadowRoot.innerHTML=`<style>${editorStyle}</style><div class="editor">${[
-        this._group("global","Affichage général",globalDisplay),
-        this._group("source","Choix des lectures et filtres",source),
-        ...(!isIndividual ? [this._group("carousel","Navigation et carrousel",carousel)] : []),
-        this._group("header","En-tête et badges",header),
-        this._group("media","Titres, saisons et années",media),
-        this._group("footer","Bandeau d'informations du flux",footer),
-        this._group("network","Débit local / distant",network),
-        this._group("users","Réglages avancés par carte",usersSection),
+        this._group("global","General display",globalDisplay),
+        this._group("source","Playback and filters",source),
+        ...(!isIndividual ? [this._group("carousel","Carousel navigation",carousel)] : []),
+        this._group("header","Header and badges",header),
+        this._group("media","Titles, seasons, and years",media),
+        this._group("footer","Stream details",footer),
+        this._group("network","Local / remote bitrate",network),
+        this._group("users","Per-card settings",usersSection),
       ].join("")}</div>`;
       this.shadowRoot.querySelectorAll("[data-field]").forEach(el => {
         const name=el.dataset.field;
@@ -1592,7 +1604,7 @@
   customElements.define("tracearr-card-editor",TracearrCardEditor);
   window.customCards=window.customCards||[];
   for (const [type,name,description] of [
-    ["tracearr-streams-card","Tracearr – Lectures en cours","Liste ou carrousel des flux Plex, Jellyfin et Emby"],
-    ["tracearr-stream-card","Tracearr – Lecture individuelle","Un seul flux Tracearr, à afficher séparément"],
+    ["tracearr-streams-card","Tracearr – Now playing","List, grid, or carousel of Plex, Jellyfin, and Emby streams"],
+    ["tracearr-stream-card","Tracearr – Single stream","One Tracearr stream, shown on its own"],
   ]) if (!window.customCards.some(card=>card.type===type)) window.customCards.push({type,name,description,preview:false});
 })();

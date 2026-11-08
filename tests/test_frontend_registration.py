@@ -61,7 +61,7 @@ def test_storage_mode_2026_has_no_mode_attr():
     resources = Resources()
     hass = SimpleNamespace(data={'lovelace': SimpleNamespace(resource_mode='storage', resources=resources)}, http=Http())
     asyncio.run(load_register_function()(hass))
-    assert resources.created == [{'res_type': 'module', 'url': '/tracearr_ha/tracearr-card.js?v=0.1.16'}]
+    assert resources.created == [{'res_type': 'module', 'url': '/tracearr_ha/tracearr-card.js?v=0.1.17'}]
     assert len(hass.http.paths) == 1
     assert len(hass.http.views) == 1
 
@@ -71,7 +71,7 @@ def test_legacy_mode_and_existing_resource_updated():
     hass = SimpleNamespace(data={'lovelace': SimpleNamespace(mode='storage', resources=resources)}, http=Http())
     asyncio.run(load_register_function()(hass))
     assert resources.created == []
-    assert resources.updated == [('old', {'res_type': 'module', 'url': '/tracearr_ha/tracearr-card.js?v=0.1.16'})]
+    assert resources.updated == [('old', {'res_type': 'module', 'url': '/tracearr_ha/tracearr-card.js?v=0.1.17'})]
 
 
 def test_yaml_mode_does_not_edit_resources():
