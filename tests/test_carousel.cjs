@@ -236,7 +236,7 @@ test('global palette styles progress and quality badges using theme, server or c
   assert.match(html, /--pill-bg:var\(--accent-color,#00BCD4\)/);
   assert.match(html, /--pill-text:#000000/);
   assert.match(html, /class="chip">4K/);
-  assert.match(html, /class="chip">12\.0 Mb\/s/);
+  assert.match(html, /class="chip" data-bitrate="x">12\.0 Mb\/s/);
   card._config.accent_color_mode='server';
   html=card._streamCard(null,s);
   assert.match(html, /--shared-accent:#AA5CC3/);
@@ -1020,6 +1020,54 @@ test('header badges move left when title is hidden, and stay right when shown', 
   card._config.show_title=true;
   assert.match(card._header([]),/<header class="head"><h3>Now playing<\/h3><div class="head-metrics">/);
   assert.match(card._header([]),/class="head-group align-right"><span class="metric/);
+});
+
+test('grid and list keep poster elements when only playback bitrate changes', () => {
+  const {card}=setup();
+  const stream={id:'movie',username:'Ada',server_type:'plex',server_name:'Plex',media_type:'movie',
+    media_title:'Due Date',state:'playing',bitrate:1000,progress_ms:10,duration_ms:1000,
+    poster_url:'/api/v1/images/proxy?id=1'};
+  card._payload={entries:[{id:'entry',streams:[stream],servers:[],connected:true,stats:{bandwidth_mbps:1}}]};
+  card._image=()=>'/posters/due-date.jpg';
+  const chip={textContent:'1.0 Mb/s'};
+  const original=card.shadowRoot.querySelector;
+  card.shadowRoot.querySelector=selector=>{
+    if (selector==='.chip[data-bitrate="movie"]') return chip;
+    if (selector==='.head' || selector==='.root') return null;
+    return original(selector);
+  };
+  for (const mode of ['grid','list']) {
+    card._config={...card._config,mode,show_bitrate:true,show_poster:true,header_show_bandwidth:true};
+    card._renderFingerprint=null;
+    card.render();
+    const renders=card.shadowRoot.renders;
+    assert.match(card.shadowRoot.innerHTML,/due-date\.jpg/);
+    assert.match(card.shadowRoot.innerHTML,/data-bitrate="movie"/);
+    stream.bitrate=7500;
+    stream.progress_ms+=2000;
+    card._payload.entries[0].stats={bandwidth_mbps:7.5,total:1};
+    card.render();
+    assert.equal(card.shadowRoot.renders,renders,`${mode} rebuilds poster DOM on a bitrate tick`);
+    assert.equal(chip.textContent,'7.5 Mb/s');
+  }
+});
+
+test('an image error from a removed poster does not drop its signed URL', () => {
+  const {card}=setup();
+  const stream={id:'s1',poster_url:'/api/v1/images/proxy?img=1',username:'Alice'};
+  const entry={id:'e1',streams:[stream]};
+  card._payload={entries:[entry]};
+  const path=card._artworkPath(entry,stream,'poster');
+  card._images.set(path,{url:'signed',raw:stream.poster_url,expires:Date.now()+60000});
+  card.shadowRoot.contains=()=>false;
+  const img={
+    getAttribute:key=>key==='data-kind'?'poster':'signed',
+    closest:()=>({dataset:{session:'s1'}}),
+    set outerHTML(_value){ throw new Error('detached image should not be rewritten'); }
+  };
+  card._onArtworkError({target:img});
+  assert.equal(card._images.get(path).url,'signed');
+  assert.equal(card._imageRetryTimers.size,0);
 });
 
 test('a signed poster appears as soon as its URL resolves, without rebuilding the carousel', async () => {

@@ -1,4 +1,4 @@
-/* Tracearr HA Lovelace cards 0.1.17 - no external frontend dependencies. */
+/* Tracearr HA Lovelace cards 0.1.18 - no external frontend dependencies. */
 (() => {
   "use strict";
   if (customElements.get("tracearr-streams-card")) return;
@@ -596,6 +596,9 @@
       const img = event.target;
       const kind = img?.getAttribute?.("data-kind");
       if (kind !== "poster" && kind !== "avatar") return;
+      // Replacing a card aborts in-flight loads. Those errors belong to images
+      // that are no longer shown and must not discard a signed URL or a retry.
+      if (this.shadowRoot?.contains && !this.shadowRoot.contains(img)) return;
       const sessionId = img.closest?.(".stream")?.dataset?.session;
       const entry = this._entryData();
       const stream = entry?.streams?.find(s => String(s.id) === sessionId);
@@ -917,7 +920,7 @@
       if (c.show_quality && s.resolution) metaByKey.quality = `<span class="chip">${E(s.resolution)}</span>`;
       // The separate video/audio icons take the place of the old text badge.
       if (c.show_bitrate && this._includeBitrate(s) && s.bitrate != null)
-        metaByKey.bitrate = `<span class="chip">${E((s.bitrate/1000).toFixed(1))} Mb/s</span>`;
+        metaByKey.bitrate = `<span class="chip" data-bitrate="${E(s.id)}">${E((s.bitrate/1000).toFixed(1))} Mb/s</span>`;
       if (c.show_codecs && (s.stream_video_codec_display || s.stream_audio_codec_display)) metaByKey.codecs = `<span>${E([s.stream_video_codec_display,s.stream_audio_codec_display].filter(Boolean).join(" / "))}</span>`;
       const meta = normalizedOrder(c.footer_field_order, FOOTER_FIELDS).map(k => metaByKey[k]).filter(Boolean);
       const accent = SERVER_ACCENTS[String(s.server_type || "").toLowerCase()] || "var(--tr-accent)";
@@ -1108,8 +1111,19 @@
     }
 
     _liveSnapshot(stream, entry) {
-      const {progress_ms, ...rest} = stream;
+      // Bitrate changes on almost every progress event. It is patched in place
+      // so a routine sample cannot replace the poster element and cancel it.
+      const {progress_ms, bitrate, ...rest} = stream;
       return JSON.stringify({rest,health:entry?.servers?.find(x => x.server_id === stream.server_id)?.status});
+    }
+    _updateBitrates(streams) {
+      if (!this._config.show_bitrate || !this.shadowRoot?.querySelector) return;
+      for (const stream of streams) {
+        const node = this.shadowRoot.querySelector(`.chip[data-bitrate="${CSS.escape(String(stream.id))}"]`);
+        if (!node || !this._includeBitrate(stream) || stream.bitrate == null) continue;
+        const text = `${(Number(stream.bitrate) / 1000).toFixed(1)} Mb/s`;
+        if (node.textContent !== text) node.textContent = text;
+      }
     }
     _refreshHeader(streams) {
       const header = this._header(streams);
@@ -1155,8 +1169,10 @@
       // transition whenever pause/bitrate/health/codec updates arrived.
       const fingerprint = JSON.stringify({
         config: c,
-        streams: c.mode === "carousel" ? streams.map(s => s.id) : streams.map(({progress_ms, ...rest}) => rest),
-        stats: c.mode === "carousel" ? undefined : entry?.stats,
+        // progress_ms and bitrate arrive on every playback sample. Stats repeat
+        // that bitrate total. Keeping them out of the fingerprint lets the
+        // existing poster elements finish loading instead of being replaced.
+        streams: c.mode === "carousel" ? streams.map(s => s.id) : streams.map(({progress_ms, bitrate, ...rest}) => rest),
         servers: c.mode === "carousel" ? undefined : entry?.servers,
         aliases: entry?.aliases,
         avatars: entry?.avatars,
@@ -1168,6 +1184,8 @@
       for (const stream of streams) this._syncPosition(stream, now);
       if (fingerprint === this._renderFingerprint && this.shadowRoot.querySelector("ha-card")) {
         if (c.mode === "carousel") this._updateCarouselLive(entry, streams);
+        this._refreshHeader(streams);
+        this._updateBitrates(streams);
         this._updateProgress();
         return;
       }

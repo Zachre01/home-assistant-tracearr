@@ -6,9 +6,13 @@
 
 **Watch Plex, Jellyfin, and Emby playback in Home Assistant with data from Tracearr.** The integration includes sensors, a live connection, and two customizable Lovelace cards (grouped streams, or a single stream).
 
-**Current version: 0.1.17** · Available in the official HACS catalog after the release is published. This is a community project that is still evolving. Test the sensors before using them for critical automations.
+**Current version: 0.1.18** · Available in the official HACS catalog after the release is published. This is a community project that is still evolving. Test the sensors before using them for critical automations.
 
-## What's new in 0.1.17
+## What's new in 0.1.18
+
+- **All posters load:** artwork is no longer cut off when it arrives in several network chunks, and live bitrate updates no longer cancel a poster that is still loading.
+
+### Recent improvements (0.1.17)
 
 - **Adaptive grid is back:** grouped cards can show streams in an automatic or fixed column grid (`mode: grid`, `columns: auto` or `1`–`4`). Cards narrower than 520px collapse to one column. Home Assistant Sections still controls the card's width and height.
 - **English interface:** the Lovelace cards, options-flow labels, and documentation are in English. A French Home Assistant language still uses `translations/fr.json` for the static configuration screens.
@@ -41,7 +45,7 @@ See the [full changelog](CHANGELOG.md) for earlier improvements and fixes.
 
 Normal updates keep existing card settings and the Home Assistant configuration entry. After an update, reload the browser with `Ctrl + F5` (or refresh the page on mobile).
 
-**Card missing from Lovelace?** In **Settings → Dashboards → Resources**, confirm there is only one JavaScript module resource for `/tracearr_ha/tracearr-card.js?v=0.1.17`. In YAML mode, add that resource yourself.
+**Card missing from Lovelace?** In **Settings → Dashboards → Resources**, confirm there is only one JavaScript module resource for `/tracearr_ha/tracearr-card.js?v=0.1.18`. In YAML mode, add that resource yourself.
 
 ## What Tracearr HA provides
 
