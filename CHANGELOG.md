@@ -2,6 +2,12 @@
 
 Changes are grouped by public version. Prereleases and older notes remain below. [GitHub Releases](https://github.com/Moosketair/home-assistant-tracearr/releases) can download a specific version.
 
+## 0.1.18 — 2026-11-08
+
+- Posters are assembled from the whole Tracearr response. A poster that arrived in more than one network chunk used to be cut off, so only some titles showed artwork.
+- Playback bitrate samples no longer rebuild list and grid cards, so an in-progress poster is not cancelled on every progress update. The bitrate chip and header total still update in place.
+- An image error from a poster that has already been removed does not discard its signed URL or use up a retry.
+
 ## 0.1.17 — 2026-11-08
 
 - Adaptive stream grid is available again: `mode: grid` with `columns` set to `auto` or `1`–`4`. Cards narrower than 520px use one column. Saved list and carousel cards are unchanged.

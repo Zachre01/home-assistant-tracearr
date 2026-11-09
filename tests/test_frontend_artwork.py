@@ -94,3 +94,93 @@ def test_artwork_proxy_rejects_non_images():
             await runner.cleanup()
 
     asyncio.run(scenario())
+
+
+async def _serve(handler):
+    app = web.Application()
+    app.router.add_get("/api/v1/images/proxy", handler)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "127.0.0.1", 0)
+    await site.start()
+    port = site._server.sockets[0].getsockname()[1]
+    return runner, f"http://127.0.0.1:{port}"
+
+
+def test_artwork_proxy_assembles_chunked_image():
+    """A poster split across packets must be forwarded whole.
+
+    StreamReader.read(n) returns only the bytes already buffered. The proxy
+    used to stop after that first chunk, so larger titles never decoded.
+    """
+    png = b"\x89PNG\r\n\x1a\n" + b"poster-payload-must-arrive-intact"
+
+    async def scenario():
+        started = asyncio.Event()
+        release = asyncio.Event()
+
+        async def image(request):
+            response = web.StreamResponse(headers={"Content-Type": "application/octet-stream"})
+            await response.prepare(request)
+            # Stop before the PNG signature is complete, so a one-chunk read
+            # cannot sniff the type or return the bytes the browser needs.
+            await response.write(png[:4])
+            started.set()
+            await release.wait()
+            await response.write(png[4:])
+            await response.write_eof()
+            return response
+
+        runner, base = await _serve(image)
+        try:
+            async with ClientSession() as session:
+                client = SimpleNamespace(base_url=base, session=session, headers={})
+                coord = SimpleNamespace(client=client, streams={"s": {"poster_url": "/api/v1/images/proxy?key=chunked"}})
+                req = SimpleNamespace(app={"hass": SimpleNamespace(data={"tracearr_ha": {"e": coord}})})
+                task = asyncio.create_task(load_artwork_view()().get(req, "e", "s", "poster"))
+                await asyncio.wait_for(started.wait(), timeout=2)
+                # Let the proxy consume the first packet. A correct reader is
+                # still waiting for the rest; the old one has already returned.
+                for _ in range(20):
+                    await asyncio.sleep(0)
+                done, _pending = await asyncio.wait({task}, timeout=0.5)
+                assert not done, "proxy returned before the rest of the image was sent"
+                release.set()
+                response = await asyncio.wait_for(task, timeout=2)
+                assert response.status == 200
+                assert response.content_type == "image/png"
+                assert response.body == png
+        finally:
+            release.set()
+            await runner.cleanup()
+
+    asyncio.run(scenario())
+
+
+def test_artwork_proxy_rejects_oversized_stream_without_content_length():
+    async def scenario():
+        async def image(request):
+            response = web.StreamResponse(headers={"Content-Type": "image/png"})
+            await response.prepare(request)
+            try:
+                for _ in range(20):
+                    await response.write(b"\x89PNG\r\n\x1a\n" + b"0123456789")
+                await response.write_eof()
+            except (Exception, asyncio.CancelledError):
+                return response
+            return response
+
+        runner, base = await _serve(image)
+        try:
+            async with ClientSession() as session:
+                client = SimpleNamespace(base_url=base, session=session, headers={})
+                coord = SimpleNamespace(client=client, streams={"s": {"poster_url": "/api/v1/images/proxy"}})
+                req = SimpleNamespace(app={"hass": SimpleNamespace(data={"tracearr_ha": {"e": coord}})})
+                view_cls = load_artwork_view()
+                view_cls.get.__globals__["MAX_ARTWORK_BYTES"] = 64
+                response = await view_cls().get(req, "e", "s", "poster")
+                assert response.status == 413
+        finally:
+            await runner.cleanup()
+
+    asyncio.run(scenario())

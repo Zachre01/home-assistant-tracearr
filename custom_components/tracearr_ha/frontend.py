@@ -34,7 +34,7 @@ async def async_register_frontend(hass):
         if not resources.loaded:
             await resources.async_load()
         base_path = FRONTEND_URL
-        wanted = FRONTEND_URL + "?v=0.1.17"
+        wanted = FRONTEND_URL + "?v=0.1.18"
         existing = [item for item in resources.async_items() if item["url"].split("?")[0] == base_path]
         if not existing:
             await resources.async_create_item({"res_type": "module", "url": wanted})
@@ -48,6 +48,29 @@ class TracearrArtworkView(HomeAssistantView):
     url = "/api/tracearr_ha/image/{entry_id}/{session_id}/{kind}"
     name = "api:tracearr_ha:image"
     requires_auth = True
+
+    @staticmethod
+    async def _read_limited(content, content_length, limit):
+        """Return the full body, or None when it is larger than ``limit``.
+
+        aiohttp's StreamReader.read(n) returns only the bytes already buffered,
+        not the rest of the payload. A single read of a positive size therefore
+        truncates any poster that arrives in more than one chunk, and the
+        browser can show only the titles that happened to fit in that chunk.
+        """
+        if content_length and content_length > limit:
+            return None
+        chunks = []
+        received = 0
+        while True:
+            chunk = await content.read(65536)
+            if not chunk:
+                break
+            received += len(chunk)
+            if received > limit:
+                return None
+            chunks.append(chunk)
+        return b"".join(chunks)
 
     async def get(self, request, entry_id, session_id, kind):
         if kind not in ("poster", "avatar"):
@@ -79,10 +102,9 @@ class TracearrArtworkView(HomeAssistantView):
                 if response.status != 200:
                     _LOGGER.debug("Tracearr artwork returned HTTP %s", response.status)
                     return web.Response(status=502 if response.status >= 500 else 404)
-                if response.content_length and response.content_length > MAX_ARTWORK_BYTES:
-                    return web.Response(status=413)
-                data = await response.content.read(MAX_ARTWORK_BYTES + 1)
-                if len(data) > MAX_ARTWORK_BYTES:
+                data = await self._read_limited(
+                    response.content, response.content_length, MAX_ARTWORK_BYTES)
+                if data is None:
                     return web.Response(status=413)
                 content_type = response.headers.get("Content-Type", "")
                 safe_type = content_type.split(";", 1)[0].strip().lower()
